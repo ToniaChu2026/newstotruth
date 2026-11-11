@@ -17,7 +17,7 @@ import {
   markerOrder,
   type ContentImage,
 } from "./wpContent";
-import { wordpressClient, type WordPressClient } from "./wordpress";
+import { defaultTarget, type PublishTarget } from "./target";
 
 const MAX_PAGE_BYTES = 2_000_000;
 const MAX_IMAGE_BYTES = 8_000_000;
@@ -383,7 +383,7 @@ export function retainPersistedImageMarkers(
 }
 
 export type ImportDeps = {
-  wp?: WordPressClient;
+  wp?: PublishTarget;
   structure?: StructureFn;
   fetchPage?: typeof fetchPublicPage;
   download?: typeof downloadImage;
@@ -396,12 +396,12 @@ function filenameFor(postSlugBase: string, index: number, extension: string) {
   return `import-${stamp}-${postSlugBase}-${index + 1}.${extension}`;
 }
 
-/** 整個匯入流程：抓取 → AI 整理 → 圖片上傳 → 建立 WordPress 草稿。 */
+/** 整個匯入流程：抓取 → AI 整理 → 圖片上傳 → 在目的地（本站或 WordPress）建立草稿。 */
 export async function importToWordPress(
   url: string,
   deps: ImportDeps = {}
 ): Promise<ImportJobResult> {
-  const wp = deps.wp ?? wordpressClient();
+  const wp = deps.wp ?? defaultTarget();
   const structure = deps.structure ?? structureWithClaude;
   const fetchPage = deps.fetchPage ?? fetchPublicPage;
   const download = deps.download ?? downloadImage;
@@ -476,7 +476,7 @@ export async function importToWordPress(
     }
   }
 
-  progress("draft", "建立 WordPress 草稿");
+  progress("draft", "建立草稿");
   const content = retainPersistedImageMarkers(
     article.content,
     Array.from(uploaded.keys())
@@ -499,6 +499,13 @@ export async function importToWordPress(
     tagIds,
     featuredMediaId: featured?.mediaId ?? null,
     sourceUrl,
+    plain: {
+      text: content,
+      images: Array.from(uploaded.values()),
+      featuredIndex,
+      categoryName: article.category,
+      tagNames: article.tags,
+    },
   });
 
   return {

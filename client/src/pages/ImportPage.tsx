@@ -21,6 +21,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "wouter";
 import { toast } from "sonner";
 
 export default function ImportPage() {
@@ -65,7 +66,7 @@ function LoginCard() {
         AI 匯入工具
       </h1>
       <p className="mt-2 text-sm leading-6 text-stone-500">
-        輸入管理密碼後，貼上文章網址即可自動建立 WordPress 草稿。
+        輸入管理密碼後，貼上文章網址即可自動建立草稿。
       </p>
       <form onSubmit={submit} className="mt-6 space-y-3">
         <Input
@@ -98,6 +99,7 @@ function Workspace() {
   const settings = trpc.importer.settings.useQuery();
   const [url, setUrl] = useState("");
   const [jobId, setJobId] = useState<string | null>(null);
+  const isSite = settings.data?.target !== "wordpress";
   const utils = trpc.useUtils();
   const start = trpc.importer.start.useMutation({
     onSuccess: job => {
@@ -118,25 +120,36 @@ function Workspace() {
       <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[.18em] text-amber-700">
-            新闻聚焦 · newstotruth.com
+            {settings.data?.siteName ?? "新闻聚焦"} · 後台
           </p>
           <h1 className="mt-2 font-display text-4xl tracking-[-.04em] text-stone-950 sm:text-5xl">
             AI 匯入工具
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-6 text-stone-500">
             貼上一篇已授權文章的網址。工具會抓取內容、用 AI
-            整理成簡體中文、上傳圖片，然後在 WordPress 建立<strong>草稿</strong>
-            。發佈仍在 WordPress 後台操作。
+            整理成簡體中文、存下圖片，然後建立<strong>草稿</strong>。
+            {isSite
+              ? "檢查內容後在這裡按「發佈」，文章才會出現在網站上。"
+              : "發佈仍在 WordPress 後台操作。"}
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => logout.mutate()}
-          className="gap-2 self-start sm:self-auto"
-        >
-          <LogOut className="h-3.5 w-3.5" /> 登出
-        </Button>
+        <div className="flex gap-2 self-start sm:self-auto">
+          {isSite ? (
+            <Button asChild variant="outline" size="sm" className="gap-2">
+              <a href="/" target="_blank" rel="noreferrer">
+                <ExternalLink className="h-3.5 w-3.5" /> 查看網站
+              </a>
+            </Button>
+          ) : null}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => logout.mutate()}
+            className="gap-2"
+          >
+            <LogOut className="h-3.5 w-3.5" /> 登出
+          </Button>
+        </div>
       </header>
 
       <section className="mt-8 rounded-2xl border border-amber-200 bg-[#fffaf0] p-5 shadow-sm sm:p-6">
@@ -185,7 +198,9 @@ function Workspace() {
         </form>
         {settings.data ? (
           <p className="mt-3 text-xs text-stone-400">
-            目標網站 {settings.data.wpBaseUrl} · 模型 {settings.data.model}
+            發佈到{" "}
+            {isSite ? "本站（獨立網站）" : `WordPress ${settings.data.wpBaseUrl}`}{" "}
+            · 模型 {settings.data.model}
           </p>
         ) : null}
       </section>
@@ -193,6 +208,7 @@ function Workspace() {
       {jobId ? (
         <JobPanel
           jobId={jobId}
+          isSite={isSite}
           onDone={() => {
             utils.importer.recentPosts.invalidate();
             setUrl("");
@@ -200,12 +216,20 @@ function Workspace() {
         />
       ) : null}
 
-      <RecentPosts />
+      <RecentPosts isSite={isSite} />
     </>
   );
 }
 
-function JobPanel({ jobId, onDone }: { jobId: string; onDone: () => void }) {
+function JobPanel({
+  jobId,
+  isSite,
+  onDone,
+}: {
+  jobId: string;
+  isSite: boolean;
+  onDone: () => void;
+}) {
   const job = trpc.importer.job.useQuery(
     { id: jobId },
     {
@@ -246,7 +270,7 @@ function JobPanel({ jobId, onDone }: { jobId: string; onDone: () => void }) {
           </div>
         </div>
       ) : null}
-      {job.data.result ? <ResultCard job={job.data} /> : null}
+      {job.data.result ? <ResultCard job={job.data} isSite={isSite} /> : null}
     </section>
   );
 }
@@ -307,7 +331,7 @@ function StageList({ job }: { job: ImportJob }) {
   );
 }
 
-function ResultCard({ job }: { job: ImportJob }) {
+function ResultCard({ job, isSite }: { job: ImportJob; isSite: boolean }) {
   const result = job.result!;
   return (
     <div className="mt-5 rounded-xl border border-stone-200 bg-white p-5">
@@ -343,9 +367,13 @@ function ResultCard({ job }: { job: ImportJob }) {
           asChild
           className="gap-2 bg-stone-950 text-white hover:bg-stone-800"
         >
-          <a href={result.editUrl} target="_blank" rel="noreferrer">
-            <ExternalLink className="h-4 w-4" /> 在 WordPress 開啟草稿
-          </a>
+          {isSite ? (
+            <Link href={result.editUrl}>檢查並發佈</Link>
+          ) : (
+            <a href={result.editUrl} target="_blank" rel="noreferrer">
+              <ExternalLink className="h-4 w-4" /> 在 WordPress 開啟草稿
+            </a>
+          )}
         </Button>
         <Button asChild variant="outline" className="gap-2">
           <a href={result.previewUrl} target="_blank" rel="noreferrer">
@@ -365,7 +393,18 @@ const STATUS_LABEL: Record<string, string> = {
   future: "排程",
 };
 
-function RecentPosts() {
+function RecentPosts({ isSite }: { isSite: boolean }) {
+  const utils = trpc.useUtils();
+  const setStatus = trpc.importer.setStatus.useMutation({
+    onSuccess: result => {
+      utils.importer.recentPosts.invalidate();
+      utils.site.invalidate();
+      toast.success(
+        result.status === "published" ? "已發佈到網站。" : "已撤回為草稿。"
+      );
+    },
+    onError: error => toast.error(error.message),
+  });
   const posts = trpc.importer.recentPosts.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
@@ -374,7 +413,7 @@ function RecentPosts() {
     <section className="mt-8 overflow-hidden rounded-2xl border border-stone-200 bg-[#fffdf9]">
       <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4">
         <h2 className="font-display text-xl tracking-[-.03em] text-stone-950">
-          最近由工具建立的文章
+          {isSite ? "網站文章" : "最近由工具建立的文章"}
         </h2>
         <Button
           variant="ghost"
@@ -397,7 +436,7 @@ function RecentPosts() {
       ) : posts.isError ? (
         <div className="p-8 text-center text-sm text-stone-500">
           <AlertCircle className="mx-auto mb-2 h-5 w-5 text-stone-400" />
-          無法讀取 WordPress 文章：{posts.error.message}
+          無法讀取文章：{posts.error.message}
         </div>
       ) : posts.data?.length ? (
         <ul className="divide-y divide-stone-100">
@@ -431,11 +470,37 @@ function RecentPosts() {
                 ) : null}
               </div>
               <div className="flex shrink-0 gap-2">
-                <Button asChild size="sm" variant="outline">
-                  <a href={post.editUrl} target="_blank" rel="noreferrer">
-                    編輯
-                  </a>
-                </Button>
+                {isSite ? (
+                  <>
+                    <Button
+                      size="sm"
+                      disabled={setStatus.isPending}
+                      onClick={() =>
+                        setStatus.mutate({
+                          id: post.id,
+                          status:
+                            post.status === "publish" ? "draft" : "published",
+                        })
+                      }
+                      className={
+                        post.status === "publish"
+                          ? "border border-stone-300 bg-white text-stone-700 hover:bg-stone-50"
+                          : "bg-emerald-700 text-white hover:bg-emerald-800"
+                      }
+                    >
+                      {post.status === "publish" ? "撤回" : "發佈"}
+                    </Button>
+                    <Button asChild size="sm" variant="outline">
+                      <Link href={post.editUrl}>編輯</Link>
+                    </Button>
+                  </>
+                ) : (
+                  <Button asChild size="sm" variant="outline">
+                    <a href={post.editUrl} target="_blank" rel="noreferrer">
+                      編輯
+                    </a>
+                  </Button>
+                )}
                 <Button asChild size="sm" variant="ghost">
                   <a href={post.previewUrl} target="_blank" rel="noreferrer">
                     預覽
@@ -447,7 +512,9 @@ function RecentPosts() {
         </ul>
       ) : (
         <p className="p-8 text-center text-sm text-stone-500">
-          還沒有由這個帳號建立的文章。
+          {isSite
+            ? "還沒有文章。貼上網址匯入第一篇吧。"
+            : "還沒有由這個帳號建立的文章。"}
         </p>
       )}
     </section>

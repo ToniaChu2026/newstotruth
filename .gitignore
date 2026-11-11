@@ -115,3 +115,6 @@ client/public/__manus__/version.json
 
 # Local app launch config
 .claude/launch.json
+
+# 獨立網站的文章與圖片
+/data/
