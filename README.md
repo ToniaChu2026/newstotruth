@@ -1,73 +1,92 @@
-# 新闻聚焦：獨立新聞網站 + AI 匯入工具
+# 新闻聚焦：存在 GitHub 上的新聞網站
 
-這個專案包含兩個部分，跑在同一個 Node 服務裡：
+版面參考 newstotruth.com 的靜態新聞網站。**文章和圖片都存在這個 repo 裡**，push 到 `main` 之後 GitHub 會自動重新產生網站並發佈到 GitHub Pages。不需要主機、資料庫或後台，也不用付費。
 
-- **公開網站**（`/`）：版面參考 newstotruth.com，有首頁頭條、三欄卡片、七個分類頁、文章頁、搜尋與分頁，手機版自動調整。
-- **後台**（`/admin`）：貼上一篇已授權文章的網址，工具會抓取內容、用 Claude 整理成簡體中文的標題、摘要、正文、分類與標籤，把圖片存下來，建立一篇**草稿**。在後台檢查、修改後按「發佈」，文章才會出現在網站上。
+## 怎麼加文章
 
-文章與圖片存在 `data/` 資料夾（`posts.json` 與 `media/`），不需要資料庫，也不需要 WordPress。備份只要複製這個資料夾。
+在 Claude Code 裡開啟這個專案，貼上文章連結並說「加入這篇文章」。Claude 會：
 
-若想改回「寫進 WordPress 草稿」的舊模式，在 `.env` 設 `IMPORT_TARGET=wordpress` 並依下方 WordPress 段落設定。原始規劃見 [docs/ai-import-plan.md](docs/ai-import-plan.md)。
+1. 抓取網頁，整理成簡體中文的標題、摘要、正文、分類與標籤；
+2. 下載圖片到 `content/media/`，把文章寫成 `content/posts/` 裡的一個檔案；
+3. commit 並 push（若這台電腦沒設定 GitHub 憑證，最後一步需要你自己執行 `git push`）。
 
-## 一次性設定
+push 後約一兩分鐘，網站就會出現新文章。完整步驟寫在 [CLAUDE.md](CLAUDE.md)，Claude 每次都會照著做。
 
-需要 Node.js 22 以上。
+只加入你有轉載授權的來源。
 
-```bash
-cp .env.example .env
+## 第一次設定（只做一次）
+
+1. 到 GitHub repo 的 **Settings → Pages**，把 **Source** 設成 **GitHub Actions**。
+2. push 到 `main`。到 **Actions** 分頁可以看到「Deploy site」在跑，完成後網址會顯示在 Settings → Pages（預設是 `https://<帳號>.github.io/<repo 名稱>/`）。
+
+要用自己的網域，在 Settings → Pages 的 Custom domain 填入即可，網站會自動改用該網域，不用改程式。
+
+## 文章檔案長什麼樣
+
+`content/posts/2026-11-10-01.md`：
+
+```
+---
+title: 文章标题
+date: 2026-11-10T08:00:00.000Z
+category: 感悟
+tags: 标签一、标签二
+image: /media/2026-11-10-01-1.jpg
+source: https://example.com/original
+excerpt: 显示在首页卡片上的摘要。
+---
+
+第一段正文。
+
+![图片说明](/media/2026-11-10-01-2.jpg "图说")
+
+第二段正文。
 ```
 
-編輯 `.env`，填入 `ANTHROPIC_API_KEY`（沒有它無法匯入）、後台登入密碼 `ADMIN_PASSWORD`、一串隨機的 `SESSION_SECRET`，需要的話改 `SITE_NAME` 與 `SITE_TAGLINE`。
+- 開頭兩條 `---` 之間，一行一個「欄位: 值」。
+- `category` 只能是：聚焦、述评、最新、特稿、感悟、文化、历史。
+- 加一行 `draft: true` 文章就不會上線。
+- 檔名（去掉 `.md`）就是文章網址：`/post/2026-11-10-01/`。
+- 要修改文章，直接在 GitHub 網頁上編輯這個檔案並 commit；要刪除就刪掉檔案。
+
+網站名稱、標語、每頁篇數在 [content/site.json](content/site.json)。
+
+## 本機預覽
+
+需要 Node.js 22 以上。
 
 ```bash
 corepack pnpm install
 ```
 
-## 日常使用
-
 ```bash
 corepack pnpm dev
 ```
 
-- 網站：<http://localhost:3000>
-- 後台：<http://localhost:3000/admin>，登入後貼上文章網址按「建立草稿」，完成後點「檢查並發佈」。
+開 <http://localhost:3000>。改動 `content/` 或程式會自動重新產生。
 
-後台可以修改標題、摘要、分類、標籤、首圖與正文（每段空一行，圖片寫成 `![說明](圖片網址)`），也可以撤回或刪除文章。草稿只有登入後才能預覽。
-
-想先看版面效果，可以產生十篇示例文章（之後在後台逐篇刪除）：
+## 其他指令
 
 ```bash
-corepack pnpm seed:demo
+corepack pnpm build    # 產生網站到 dist/
+corepack pnpm test     # 單元測試
+corepack pnpm check    # TypeScript 型別檢查
 ```
 
-## WordPress 模式（可選，IMPORT_TARGET=wordpress）
+不透過 Claude Code、想讓程式直接呼叫 Claude API 整理文章時，在 `.env` 填入 `ANTHROPIC_API_KEY` 後執行：
 
-
-1. 在 wp-admin 新增使用者 `ai-importer`，角色 **Author**（只能建立自己的文章）或 **Editor**。
-2. 進入該使用者的個人資料頁，在「應用程式密碼」區塊新增一組密碼，複製下來。
-3. 把 [wordpress/mu-plugins/ntt-source-url.php](wordpress/mu-plugins/ntt-source-url.php) 上傳到網站的 `wp-content/mu-plugins/` 資料夾（沒有就建立）。它會自動啟用，用來記錄每篇文章的來源網址並避免重複匯入。沒裝也能用，只是不會查重。
-
-此模式下 `/admin` 建立的是 WordPress 草稿，發佈在 wp-admin 操作。
+```bash
+corepack pnpm article auto "https://example.com/article"
+```
 
 ## 行為說明
 
-- 只接受公開網站的 http/https 網址，封鎖內網與本機位址。
-- AI 一律輸出簡體中文，保留「【大纪元…讯】」之類的來源抬頭，分類只能是站上七個分類之一，拿不準時用「最新」。
-- 圖片最多 8 張，第一張設為特色圖片，其餘依原文位置插入內文；下載失敗的圖片會略過，不影響整篇。
-- 文末自動加上「原文链接」。
-- 同一來源網址已匯入過時，直接回傳既有文章（WordPress 模式需安裝 mu-plugin）。
-- 模型預設 `claude-opus-5-5`，可在 `.env` 改成 `claude-sonnet-5-5` 或 `claude-haiku-5-5` 降低費用。
+- 只抓取公開網站的 http/https 網址，封鎖內網與本機位址。
+- 圖片每篇最多 8 張，正文中第一張當首圖，其餘留在原位；下載失敗的圖片會略過，不影響整篇。
+- 同一個來源網址不會加入第二次。
+- 文章頁文末自動顯示「原文链接」。
+- 搜尋在瀏覽器裡進行（載入一份文章索引後篩選），不需要伺服器。
 
-## 開發
+## 舊版本
 
-```bash
-corepack pnpm test     # 單元測試
-corepack pnpm check    # TypeScript 型別檢查
-corepack pnpm build    # 產生 dist/，之後用 corepack pnpm start 執行
-```
-
-## 部署到雲端（可選）
-
-整個網站是一個 Node 服務，不需要資料庫。部署到 Railway、Render 或 Fly.io 時，設定 `.env.example` 裡的環境變數，啟動指令用 `pnpm build && pnpm start`。
-
-**重要**：`DATA_DIR` 必須指向永久磁碟（volume），否則每次重新部署文章與圖片都會消失。服務只能跑一個實例。
+這個 repo 之前是「Node 伺服器 + 後台」與「寫進 WordPress 草稿」的版本，程式碼保留在 git 歷史裡（commit `b9a645d`）。

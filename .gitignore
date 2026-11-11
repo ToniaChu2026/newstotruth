@@ -116,5 +116,7 @@ client/public/__manus__/version.json
 # Local app launch config
 .claude/launch.json
 
-# 獨立網站的文章與圖片
+# 新增文章時的暫存檔
+/.import/
+# 舊版（伺服器模式）留下的本機資料
 /data/
