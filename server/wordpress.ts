@@ -1,4 +1,5 @@
 import { ENV } from "./_core/env";
+import type { ContentImage } from "./wpContent";
 
 export type WpCategory = { id: number; name: string; slug: string };
 export type WpTag = { id: number; name: string };
@@ -30,6 +31,14 @@ export type CreateDraftInput = {
   tagIds: number[];
   featuredMediaId: number | null;
   sourceUrl: string;
+  /** 未組成 Gutenberg 區塊前的原始內容，給非 WordPress 的目的地使用。 */
+  plain?: {
+    text: string;
+    images: ContentImage[];
+    featuredIndex: number | null;
+    categoryName: string;
+    tagNames: string[];
+  };
 };
 
 export class WordPressError extends Error {

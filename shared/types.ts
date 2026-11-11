@@ -28,3 +28,27 @@ export type ImportJob = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+export type SiteBlock =
+  | { type: "p"; text: string }
+  | { type: "img"; url: string; alt: string; caption?: string };
+
+export type SitePostStatus = "draft" | "published";
+
+export type SitePost = {
+  id: number;
+  title: string;
+  excerpt: string;
+  blocks: SiteBlock[];
+  category: string;
+  tags: string[];
+  /** 首圖網址（/media/… 或 https://…），沒有則為 null。 */
+  image: string | null;
+  sourceUrl: string | null;
+  status: SitePostStatus;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string | null;
+};
+
+export type SitePostSummary = Omit<SitePost, "blocks">;

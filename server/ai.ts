@@ -50,6 +50,10 @@ export const structureWithClaude: StructureFn = async ({
   sourceText,
   fallbackTitle,
 }) => {
+  if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN)
+    throw new Error(
+      "尚未設定 ANTHROPIC_API_KEY：請在 .env 填入 Anthropic API 金鑰後重新啟動。"
+    );
   const response = await anthropic().messages.parse({
     model: ENV.anthropicModel,
     max_tokens: 16000,

@@ -37,3 +37,24 @@ export const IMPORT_STAGE_LABELS: Record<ImportStage, string> = {
   images: "上傳圖片",
   draft: "建立草稿",
 };
+
+/** 獨立網站（IMPORT_TARGET=site）使用的分類與網址代稱。 */
+export const SITE_CATEGORIES = [
+  { name: "聚焦", slug: "focus" },
+  { name: "述评", slug: "commentary" },
+  { name: "最新", slug: "news" },
+  { name: "特稿", slug: "featured" },
+  { name: "感悟", slug: "inspired" },
+  { name: "文化", slug: "culture" },
+  { name: "历史", slug: "history" },
+] as const;
+export function siteCategoryBySlug(slug: string) {
+  return SITE_CATEGORIES.find(category => category.slug === slug) ?? null;
+}
+export function siteCategorySlug(name: string) {
+  return (
+    SITE_CATEGORIES.find(category => category.name === name)?.slug ?? "news"
+  );
+}
+export const SITE_PAGE_SIZE = 12;
+export type ImportTarget = "site" | "wordpress";

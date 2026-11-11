@@ -5,6 +5,7 @@ import { createServer } from "http";
 import net from "net";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { siteStore } from "../siteStore";
 import { missingEnv } from "./env";
 import { serveStatic, setupVite } from "./vite";
 
@@ -39,6 +40,17 @@ async function startServer() {
     createExpressMiddleware({ router: appRouter, createContext })
   );
 
+  // 匯入的圖片：只送出圖片本身，並禁止瀏覽器猜測內容類型。
+  app.use(
+    "/media",
+    express.static(siteStore().mediaDir, {
+      index: false,
+      maxAge: "30d",
+      setHeaders: res => res.setHeader("X-Content-Type-Options", "nosniff"),
+    }),
+    (_req, res) => res.status(404).end()
+  );
+
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
@@ -50,7 +62,9 @@ async function startServer() {
   if (port !== preferredPort)
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   server.listen(port, () =>
-    console.log(`AI 匯入工具：http://localhost:${port}/`)
+    console.log(
+      `網站：http://localhost:${port}/　後台：http://localhost:${port}/admin`
+    )
   );
 }
 
