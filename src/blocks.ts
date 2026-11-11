@@ -1,5 +1,7 @@
 export type SiteBlock =
   | { type: "p"; text: string }
+  /** 小標題，文章檔裡寫成「## 文字」。 */
+  | { type: "h"; text: string }
   | { type: "img"; url: string; alt: string; caption?: string };
 
 const IMAGE_LINE = /^!\[(.*?)\]\((\S+?)(?:\s+"(.*)")?\)$/;
@@ -42,13 +44,15 @@ export function blocksFromMarkedText(
   return blocks;
 }
 
-/** 文章檔的正文格式：段落以空行分隔，圖片寫成 ![說明](網址 "圖說")。 */
+/** 文章檔的正文格式：段落以空行分隔，小標題寫成 ## 文字，圖片寫成 ![說明](網址 "圖說")。 */
 export function blocksToEditable(blocks: SiteBlock[]) {
   return blocks
     .map(block =>
       block.type === "p"
         ? block.text
-        : `![${block.alt.replace(/[\[\]\n]/g, " ")}](${block.url}${block.caption ? ` "${block.caption.replace(/["\n]/g, " ")}"` : ""})`
+        : block.type === "h"
+          ? `## ${block.text}`
+          : `![${block.alt.replace(/[\[\]\n]/g, " ")}](${block.url}${block.caption ? ` "${block.caption.replace(/["\n]/g, " ")}"` : ""})`
     )
     .join("\n\n");
 }
@@ -66,6 +70,11 @@ export function editableToBlocks(text: string): SiteBlock[] {
         alt: image[1].trim(),
         ...(image[3]?.trim() ? { caption: image[3].trim() } : {}),
       });
+      continue;
+    }
+    const heading = /^#{2,4}\s+(.+)$/.exec(line);
+    if (heading) {
+      blocks.push({ type: "h", text: heading[1].trim() });
       continue;
     }
     blocks.push({ type: "p", text: line });

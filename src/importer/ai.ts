@@ -13,6 +13,11 @@ export const aiArticleSchema = z.object({
     ),
   category: z.enum(CATEGORY_NAMES).describe("从七个固定分类中选一个"),
   tags: z.array(z.string()).describe("最多六个简短标签，简体中文"),
+  captions: z
+    .array(z.object({ image: z.number(), text: z.string() }))
+    .describe(
+      "正文保留的每张图片的图说（网页上紧接在图片后的说明文字），image 是 {{image:n}} 的 n；图说不要再写进正文"
+    ),
 });
 
 export type AiArticle = z.infer<typeof aiArticleSchema>;

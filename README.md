@@ -23,7 +23,7 @@ push 後約一兩分鐘，網站就會出現新文章。完整步驟寫在 [CLAU
 
 ## 文章檔案長什麼樣
 
-`content/posts/2026-11-10-01.md`：
+`content/posts/文章标题.md`：
 
 ```
 ---
@@ -31,14 +31,17 @@ title: 文章标题
 date: 2026-11-10T08:00:00.000Z
 category: 感悟
 tags: 标签一、标签二
-image: /media/2026-11-10-01-1.jpg
+image: /media/20261110-a1b2c3-1.jpg
+caption: 首图下方的图说。（图片来源）
 source: https://example.com/original
 excerpt: 显示在首页卡片上的摘要。
 ---
 
 第一段正文。
 
-![图片说明](/media/2026-11-10-01-2.jpg "图说")
+## 小标题
+
+![图片说明](/media/20261110-a1b2c3-2.jpg "图说")
 
 第二段正文。
 ```
@@ -46,7 +49,7 @@ excerpt: 显示在首页卡片上的摘要。
 - 開頭兩條 `---` 之間，一行一個「欄位: 值」。
 - `category` 只能是：聚焦、述评、最新、特稿、感悟、文化、历史。
 - 加一行 `draft: true` 文章就不會上線。
-- 檔名（去掉 `.md`）就是文章網址：`/post/2026-11-10-01/`。
+- 檔名（去掉 `.md`）就是文章網址，由標題產生：`文章标题.md` → `/文章标题/`，和原本 newstotruth.com 的網址格式相同。改檔名就會改網址，已經分享出去的舊連結會失效。
 - 要修改文章，直接在 GitHub 網頁上編輯這個檔案並 commit；要刪除就刪掉檔案。
 
 網站名稱、標語、每頁篇數在 [content/site.json](content/site.json)。
@@ -72,6 +75,14 @@ corepack pnpm build    # 產生網站到 dist/
 corepack pnpm test     # 單元測試
 corepack pnpm check    # TypeScript 型別檢查
 ```
+
+從原本的 WordPress 網站搬更多文章（原樣保留內容、圖說、日期與網址，已存在的會略過）：
+
+```bash
+corepack pnpm migrate-wp 12 12
+```
+
+上面是第 13 到 24 篇；第一個數字是篇數，第二個是要跳過的最新篇數。
 
 不透過 Claude Code、想讓程式直接呼叫 Claude API 整理文章時，在 `.env` 填入 `ANTHROPIC_API_KEY` 後執行：
 

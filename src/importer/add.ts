@@ -1,11 +1,13 @@
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { blocksFromMarkedText } from "../blocks";
-import { contentDir } from "../config";
+import { contentDir, dayInTimeZone, loadSiteConfig } from "../config";
 import {
   loadPosts,
   mediaDir,
-  nextSlug,
+  titleSlug,
+  uniqueSlug,
   postsDir,
   serializePost,
 } from "../content";
@@ -64,11 +66,40 @@ export type StructuredInput = {
   tags?: string[];
   content?: string;
   contentRange?: { start: string; end?: string; omit?: string[] };
+  /**
+   * 每張圖片的圖說，key 是 {{image:n}} 的 n。來源網頁上圖片下方的說明文字放在這裡，
+   * 不要丟掉；同樣文字的段落會自動從正文移除，不會出現兩次。
+   */
+  captions?: Record<string, string> | Array<{ image: number; text: string }>;
 };
+
+export function captionMap(input: StructuredInput["captions"]) {
+  const map = new Map<number, string>();
+  if (Array.isArray(input)) {
+    for (const item of input)
+      if (item?.text?.trim()) map.set(Number(item.image), item.text.trim());
+  } else if (input && typeof input === "object") {
+    for (const [key, text] of Object.entries(input))
+      if (typeof text === "string" && text.trim())
+        map.set(Number(key), text.trim());
+  }
+  return map;
+}
+
+/** 媒體檔名用日期加來源雜湊，保持英數字，網址不需要編碼。 */
+export function mediaPrefix(sourceUrl: string, date: Date, dir: string) {
+  const day = dayInTimeZone(date, loadSiteConfig(dir).timeZone).replace(
+    /-/g,
+    ""
+  );
+  const hash = createHash("sha1").update(sourceUrl).digest("hex").slice(0, 6);
+  return `${day}-${hash}`;
+}
 
 export function resolveContent(input: StructuredInput, sourceText: string) {
   if (input.content?.trim() || !input.contentRange) return input;
   const { start, end, omit = [] } = input.contentRange;
+  const captionTexts = new Set(captionMap(input.captions).values());
   const from = sourceText.indexOf(start);
   if (!start || from === -1)
     throw new Error("contentRange.start 在來源文字裡找不到。");
@@ -80,7 +111,10 @@ export function resolveContent(input: StructuredInput, sourceText: string) {
     .split(/\n+/)
     .map(line => line.trim())
     .filter(
-      line => line && !omit.some(prefix => prefix && line.startsWith(prefix))
+      line =>
+        line &&
+        !captionTexts.has(line) &&
+        !omit.some(prefix => prefix && line.startsWith(prefix))
     )
     .join("\n\n");
   return { ...input, content };
@@ -135,6 +169,10 @@ export async function addArticle(
       duplicate: true,
     };
 
+  const captions =
+    structured && typeof structured === "object"
+      ? captionMap((structured as StructuredInput).captions)
+      : new Map<number, string>();
   const sourceMarkers = Array.from(
     new Set(source.text.match(/\{\{image:\d+\}\}/g) || [])
   );
@@ -146,21 +184,26 @@ export async function addArticle(
     sourceMarkers
   );
 
-  const slug = nextSlug(now, dir);
+  const slug = uniqueSlug(titleSlug(article.title), dir);
+  const prefix = mediaPrefix(source.sourceUrl, now, dir);
   fs.mkdirSync(mediaDir(dir), { recursive: true });
   fs.mkdirSync(postsDir(dir), { recursive: true });
-  const saved = new Map<number, { url: string; altText: string }>();
+  const saved = new Map<
+    number,
+    { url: string; altText: string; caption?: string }
+  >();
   let skipped = 0;
   for (const index of markerOrder(article.content)) {
     const candidate = source.images[index];
     if (!candidate) continue;
     try {
       const file = await download(candidate);
-      const name = `${slug}-${saved.size + 1}.${file.extension}`;
+      const name = `${prefix}-${saved.size + 1}.${file.extension}`;
       fs.writeFileSync(path.join(mediaDir(dir), name), file.bytes);
       saved.set(index, {
         url: `/media/${name}`,
         altText: candidate.altText || article.title,
+        caption: captions.get(index),
       });
     } catch (error) {
       skipped += 1;
@@ -187,6 +230,10 @@ export async function addArticle(
       tags: article.tags,
       excerpt: article.summary,
       image: featuredIndex === null ? null : saved.get(featuredIndex)!.url,
+      caption:
+        featuredIndex === null
+          ? null
+          : (saved.get(featuredIndex)!.caption ?? null),
       source: source.sourceUrl,
       draft: Boolean(deps.draft),
       blocks: blocksFromMarkedText(content, saved, featuredIndex),

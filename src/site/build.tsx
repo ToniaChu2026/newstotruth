@@ -182,7 +182,7 @@ export async function buildSite(options: BuildOptions = {}) {
       )
       .slice(0, 3);
     write(
-      `${postPath(post)}index.html`,
+      `/${post.slug}/index.html`,
       {
         title: `${post.title} | ${config.name}`,
         description: post.excerpt,
@@ -219,7 +219,7 @@ export async function buildSite(options: BuildOptions = {}) {
     path.join(outDir, "search-index.json"),
     JSON.stringify(
       posts.map((post: Post) => ({
-        slug: post.slug,
+        path: postPath(post),
         title: post.title,
         excerpt: post.excerpt,
         category: post.category,
@@ -227,7 +227,7 @@ export async function buildSite(options: BuildOptions = {}) {
         image: post.image,
         dateText: formatDate(site, post.date),
         text: post.blocks
-          .map(block => (block.type === "p" ? block.text : ""))
+          .map(block => (block.type === "img" ? "" : block.text))
           .join(" ")
           .slice(0, 6000),
       }))

@@ -9,7 +9,8 @@
     "article": "tsx scripts/article.ts",
     "check": "tsc --noEmit",
     "format": "prettier --write .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "migrate-wp": "tsx scripts/migrate-wp.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.1.0",

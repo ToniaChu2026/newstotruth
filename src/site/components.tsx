@@ -31,8 +31,9 @@ export function href(site: Site, path: string) {
 export function media(site: Site, url: string) {
   return url.startsWith("/") ? href(site, url) : url;
 }
-export function postPath(post: Post) {
-  return `/post/${post.slug}/`;
+/** 文章網址（已編碼，可直接放進連結）：/<slug>/。 */
+export function postPath(post: Pick<Post, "slug">) {
+  return `/${encodeURIComponent(post.slug)}/`;
 }
 export function categoryPath(name: string) {
   return `/category/${categorySlug(name)}/`;
@@ -486,16 +487,25 @@ export function ArticlePage({
           {post.title}
         </h1>
         {post.image ? (
-          <img
-            src={media(site, post.image)}
-            alt=""
-            className="mt-8 w-full bg-stone-100"
-          />
+          <figure className="mt-8">
+            <img
+              src={media(site, post.image)}
+              alt={post.caption ?? ""}
+              className="w-full bg-stone-100"
+            />
+            {post.caption ? (
+              <figcaption className="mt-2.5 text-[14px] leading-7 text-stone-500">
+                {post.caption}
+              </figcaption>
+            ) : null}
+          </figure>
         ) : null}
         <div className="post-body mt-8">
           {post.blocks.map((block, index) =>
             block.type === "p" ? (
               <p key={index}>{block.text}</p>
+            ) : block.type === "h" ? (
+              <h2 key={index}>{block.text}</h2>
             ) : (
               <figure key={index}>
                 <img

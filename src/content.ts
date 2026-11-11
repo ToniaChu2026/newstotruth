@@ -1,16 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { blocksToEditable, editableToBlocks, type SiteBlock } from "./blocks";
-import {
-  contentDir,
-  dayInTimeZone,
-  DEFAULT_CATEGORY_NAME,
-  isCategoryName,
-  loadSiteConfig,
-} from "./config";
+import { contentDir, DEFAULT_CATEGORY_NAME, isCategoryName } from "./config";
 
 export type Post = {
-  /** 檔名去掉 .md，同時是文章網址的一部分，例如 2026-11-10-01。 */
+  /** 檔名去掉 .md，也是文章網址：/<slug>/。通常由標題產生，例如「美国女子濒死时回顾一生-看尽自己此生善恶」。 */
   slug: string;
   title: string;
   /** ISO 時間，用來排序與顯示日期。 */
@@ -20,18 +14,73 @@ export type Post = {
   excerpt: string;
   /** 首圖（/media/… 或 https://…）。 */
   image: string | null;
+  /** 首圖下方的圖說。 */
+  caption: string | null;
   source: string | null;
   draft: boolean;
   blocks: SiteBlock[];
 };
 
-const SLUG = /^[a-z0-9][a-z0-9-]*$/;
+/** 網站根目錄已經被其他頁面使用的名稱，文章不能用。 */
+const RESERVED_SLUGS = new Set([
+  "category",
+  "search",
+  "page",
+  "media",
+  "assets",
+  "post",
+  "404.html",
+  "sitemap.xml",
+  "robots.txt",
+  "search-index.json",
+]);
+const BAD_SLUG_CHAR = /[\/\\?#%\s"'<>&]/;
+
+export function isValidSlug(slug: string) {
+  return (
+    slug.length > 0 &&
+    slug.length <= 200 &&
+    !slug.startsWith(".") &&
+    !slug.startsWith("-") &&
+    !BAD_SLUG_CHAR.test(slug) &&
+    !RESERVED_SLUGS.has(slug.toLowerCase())
+  );
+}
+
+/**
+ * 由標題產生網址：保留中文、英文與數字，空白換成連字號，其他標點去掉。
+ * 例：「前NBA球星：“真善忍”将成为我的座右铭」→「前nba球星真善忍将成为我的座右铭」。
+ */
+export function titleSlug(title: string) {
+  const slug = title
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]+/gu, "")
+    .trim()
+    .replace(/[\s-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80)
+    .replace(/-+$/, "");
+  return isValidSlug(slug) ? slug : "post";
+}
+
+/** 找一個還沒被使用的檔名：重複時加上 -2、-3…… */
+export function uniqueSlug(base: string, dir = contentDir()) {
+  const folder = postsDir(dir);
+  const taken = (slug: string) =>
+    !isValidSlug(slug) || fs.existsSync(path.join(folder, `${slug}.md`));
+  if (!taken(base)) return base;
+  for (let n = 2; n < 1000; n += 1)
+    if (!taken(`${base}-${n}`)) return `${base}-${n}`;
+  throw new Error("同名文章太多了。");
+}
+
 const FIELD_ORDER = [
   "title",
   "date",
   "category",
   "tags",
   "image",
+  "caption",
   "source",
   "excerpt",
   "draft",
@@ -72,6 +121,7 @@ export function parsePost(slug: string, text: string): Post {
       .filter(Boolean),
     excerpt: fields.get("excerpt") ?? "",
     image: fields.get("image") || null,
+    caption: fields.get("caption") || null,
     source: fields.get("source") || null,
     draft: fields.get("draft") === "true",
     blocks: editableToBlocks(match[2]),
@@ -85,6 +135,7 @@ export function serializePost(post: Omit<Post, "slug">) {
     category: post.category,
     tags: post.tags.map(oneLine).join("、"),
     image: post.image ?? "",
+    caption: oneLine(post.caption ?? ""),
     source: post.source ?? "",
     excerpt: oneLine(post.excerpt),
     draft: post.draft ? "true" : "",
@@ -111,25 +162,13 @@ export function loadPosts(dir = contentDir()): Post[] {
     .filter(name => name.endsWith(".md"))
     .map(name => {
       const slug = name.slice(0, -3);
-      if (!SLUG.test(slug))
-        throw new Error(`文章檔名 ${name} 只能用小寫英文、數字與連字號。`);
+      if (!isValidSlug(slug))
+        throw new Error(
+          `文章檔名 ${name} 不能含空白、斜線、引號、? # % & < >，也不能是網站保留的名稱。`
+        );
       return parsePost(slug, fs.readFileSync(path.join(folder, name), "utf8"));
     })
     .sort(
       (a, b) => b.date.localeCompare(a.date) || b.slug.localeCompare(a.slug)
     );
-}
-
-/** 依日期產生下一個可用的檔名：2026-11-10-01、2026-11-10-02… */
-export function nextSlug(date: Date, dir = contentDir()) {
-  const day = dayInTimeZone(date, loadSiteConfig(dir).timeZone);
-  const folder = postsDir(dir);
-  const taken = fs.existsSync(folder)
-    ? new Set(fs.readdirSync(folder))
-    : new Set();
-  for (let n = 1; n < 1000; n += 1) {
-    const slug = `${day}-${String(n).padStart(2, "0")}`;
-    if (!taken.has(`${slug}.md`)) return slug;
-  }
-  throw new Error("同一天的文章太多了。");
 }

@@ -36,7 +36,7 @@ function report(result: AddResult) {
   console.log(
     `圖片：${result.imageCount} 張${result.skippedImages ? `，略過 ${result.skippedImages} 張` : ""}`
   );
-  console.log(`網址：/post/${result.slug}/`);
+  console.log(`網址：/${result.slug}/`);
 }
 
 async function main() {

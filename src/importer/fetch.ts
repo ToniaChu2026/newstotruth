@@ -98,7 +98,7 @@ export async function fetchPublicPage(inputUrl: string) {
   throw new Error("文章網址轉址次數過多。");
 }
 
-function decodeHtml(value: string) {
+export function decodeHtml(value: string) {
   return value
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&")
@@ -284,7 +284,14 @@ export function normalizeAiArticle(
     if (sourcePosition === -1)
       throw new Error("整理後的圖片標記和來源對不上，請再試一次。");
   }
-  return { title, summary, content, category, tags };
+  const captions = Array.isArray(candidate.captions)
+    ? candidate.captions
+        .filter(
+          item => item && typeof item.text === "string" && item.text.trim()
+        )
+        .map(item => ({ image: Number(item.image), text: item.text.trim() }))
+    : [];
+  return { title, summary, content, category, tags, captions };
 }
 
 export async function structureArticle(

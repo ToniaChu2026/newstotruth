@@ -26,7 +26,7 @@
     return node;
   }
   function card(post) {
-    var href = base + "/post/" + post.slug + "/";
+    var href = base + post.path;
     var article = el("article", "group mb-10 break-inside-avoid");
     if (post.image) {
       var wrap = link(href, "block overflow-hidden bg-stone-100");

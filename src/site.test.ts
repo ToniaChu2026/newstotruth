@@ -2,8 +2,19 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { loadPosts, nextSlug, parsePost, serializePost } from "./content";
-import { addArticle, resolveContent, type FetchedSource } from "./importer/add";
+import {
+  isValidSlug,
+  loadPosts,
+  parsePost,
+  serializePost,
+  titleSlug,
+} from "./content";
+import {
+  addArticle,
+  mediaPrefix,
+  resolveContent,
+  type FetchedSource,
+} from "./importer/add";
 import { buildSite } from "./site/build";
 
 let dir: string;
@@ -32,11 +43,12 @@ const download = async () => ({
 const now = new Date("2026-11-10T20:00:00Z"); // 上海時間 11 日凌晨 4 點
 
 const structured = {
-  title: "测试文章",
+  title: "测试文章：标题",
   summary: "摘要",
   category: "感悟",
   tags: ["标签"],
-  contentRange: { start: "正文开始", end: "原文链接：", omit: ["图说："] },
+  contentRange: { start: "正文开始", end: "原文链接：" },
+  captions: { "1": "图说：第一张图" },
 };
 
 describe("文章檔格式", () => {
@@ -48,6 +60,7 @@ describe("文章檔格式", () => {
       tags: ["甲", "乙"],
       excerpt: "摘要",
       image: "/media/a.jpg",
+      caption: "首图图说",
       source: "https://a.example/x",
       draft: false,
       blocks: [
@@ -82,19 +95,20 @@ describe("文章檔格式", () => {
 });
 
 describe("擷取正文範圍", () => {
-  it("原樣取出起訖之間的段落並刪掉指定段落", () => {
+  it("原樣取出起訖之間的段落，刪掉指定段落與圖說段落", () => {
     const { content } = resolveContent(
       {
         contentRange: {
           start: "正文开始",
           end: "原文链接：",
-          omit: ["图说："],
+          omit: ["第三段"],
         },
+        captions: { "1": "图说：第一张图" },
       },
       source.text
     );
     expect(content).toBe(
-      `正文开始。${filler}\n\n{{image:1}}\n\n第二段。${filler}\n\n{{image:2}}\n\n第三段。`
+      `正文开始。${filler}\n\n{{image:1}}\n\n第二段。${filler}\n\n{{image:2}}`
     );
   });
 
@@ -105,33 +119,82 @@ describe("擷取正文範圍", () => {
   });
 });
 
+describe("文章網址", () => {
+  it("由標題產生，保留中文，去掉標點", () => {
+    expect(titleSlug("前NBA球星：“真善忍”将成为我的座右铭")).toBe(
+      "前nba球星真善忍将成为我的座右铭"
+    );
+    expect(titleSlug("美国女子濒死时回顾一生 看尽自己此生善恶")).toBe(
+      "美国女子濒死时回顾一生-看尽自己此生善恶"
+    );
+    expect(titleSlug("？！")).toBe("post");
+  });
+
+  it("拒絕會破壞網址或撞到網站頁面的檔名", () => {
+    expect(isValidSlug("美国女子濒死时回顾一生-看尽自己此生善恶")).toBe(true);
+    expect(isValidSlug("前nba球星：真善忍将成为我的座右铭")).toBe(true);
+    for (const bad of ["a/b", "a b", "a%20b", "search", "Category", ".x", ""])
+      expect(isValidSlug(bad)).toBe(false);
+  });
+});
+
+const slug = "测试文章标题";
+const prefix = mediaPrefix(source.sourceUrl, now, "/nonexistent");
+
 describe("新增文章", () => {
-  it("寫成文章檔：第一張圖當首圖，其餘留在原位，裝飾圖不下載", async () => {
+  it("寫成文章檔：標題當網址，首圖與圖說保留，其餘圖片留在原位", async () => {
     const result = await addArticle(source, structured, { dir, download, now });
-    expect(result.slug).toBe("2026-11-11-01");
+    expect(result.slug).toBe(slug);
     expect(result.imageCount).toBe(2);
     const [post] = loadPosts(dir);
     expect(post).toMatchObject({
-      title: "测试文章",
+      slug,
+      title: "测试文章：标题",
       category: "感悟",
-      image: "/media/2026-11-11-01-1.jpg",
+      image: `/media/${prefix}-1.jpg`,
+      caption: "图说：第一张图",
       source: source.sourceUrl,
     });
     expect(post.blocks.filter(block => block.type === "img")).toEqual([
-      { type: "img", url: "/media/2026-11-11-01-2.jpg", alt: "图2" },
+      { type: "img", url: `/media/${prefix}-2.jpg`, alt: "图2" },
     ]);
+    expect(
+      post.blocks.some(
+        block => block.type === "p" && block.text.startsWith("图说")
+      )
+    ).toBe(false);
     expect(fs.readdirSync(path.join(dir, "media")).sort()).toEqual([
-      "2026-11-11-01-1.jpg",
-      "2026-11-11-01-2.jpg",
+      `${prefix}-1.jpg`,
+      `${prefix}-2.jpg`,
     ]);
   });
 
-  it("同一來源不會加第二次，新文章的檔名往後編號", async () => {
+  it("同一來源不會加第二次；不同來源同標題時網址加上編號", async () => {
     await addArticle(source, structured, { dir, download, now });
     const again = await addArticle(source, structured, { dir, download, now });
     expect(again.duplicate).toBe(true);
     expect(loadPosts(dir)).toHaveLength(1);
-    expect(nextSlug(now, dir)).toBe("2026-11-11-02");
+    const other = await addArticle(
+      { ...source, sourceUrl: "https://publisher.example.com/other" },
+      structured,
+      { dir, download, now }
+    );
+    expect(other.slug).toBe(`${slug}-2`);
+  });
+
+  it("內文圖片的圖說寫在圖片下方", async () => {
+    await addArticle(
+      source,
+      {
+        ...structured,
+        captions: { "1": "图说：第一张图", "2": "第二张图的说明" },
+      },
+      { dir, download, now }
+    );
+    const [post] = loadPosts(dir);
+    expect(post.blocks.find(block => block.type === "img")).toMatchObject({
+      caption: "第二张图的说明",
+    });
   });
 
   it("圖片下載失敗時略過該張", async () => {
@@ -147,7 +210,8 @@ describe("新增文章", () => {
     });
     expect(result).toMatchObject({ imageCount: 1, skippedImages: 1 });
     const [post] = loadPosts(dir);
-    expect(post.image).toBe("/media/2026-11-11-01-1.jpg");
+    expect(post.image).toBe(`/media/${prefix}-1.jpg`);
+    expect(post.caption).toBeNull();
     expect(post.blocks.every(block => block.type === "p")).toBe(true);
   });
 });
@@ -170,25 +234,30 @@ describe("產生網站", () => {
     expect(result.posts).toBe(1);
     const read = (file: string) =>
       fs.readFileSync(path.join(outDir, file), "utf8");
+    const encoded = encodeURIComponent(slug);
     const home = read("index.html");
-    expect(home).toContain("测试文章");
+    expect(home).toContain("测试文章：标题");
     expect(home).not.toContain("草稿文章");
-    expect(home).toContain('href="/repo/post/2026-11-11-01/"');
-    expect(home).toContain('src="/repo/media/2026-11-11-01-1.jpg"');
+    expect(home).toContain(`href="/repo/${encoded}/"`);
+    expect(home).toContain(`src="/repo/media/${prefix}-1.jpg"`);
     expect(home).toMatch(/href="\/repo\/assets\/site\.[0-9a-f]+\.css"/);
-    const article = read("post/2026-11-11-01/index.html");
-    expect(article).toContain("<title>测试文章 | 新闻聚焦</title>");
+    const article = read(`${slug}/index.html`);
+    expect(article).toContain("<title>测试文章：标题 | 新闻聚焦</title>");
+    expect(article).toContain("<figcaption");
+    expect(article).toContain("图说：第一张图");
     expect(article).toContain(
-      'property="og:image" content="https://user.github.io/repo/media/2026-11-11-01-1.jpg"'
+      `property="og:image" content="https://user.github.io/repo/media/${prefix}-1.jpg"`
     );
-    expect(read("category/inspired/index.html")).toContain("测试文章");
+    expect(read("category/inspired/index.html")).toContain("测试文章：标题");
     expect(read("category/focus/index.html")).toContain("暂无文章");
-    expect(fs.existsSync(path.join(outDir, "post/2026-11-11-02"))).toBe(false);
-    expect(JSON.parse(read("search-index.json"))).toHaveLength(1);
+    expect(fs.existsSync(path.join(outDir, "草稿文章"))).toBe(false);
+    const index = JSON.parse(read("search-index.json"));
+    expect(index).toHaveLength(1);
+    expect(index[0].path).toBe(`/${encoded}/`);
     expect(read("sitemap.xml")).toContain(
-      "https://user.github.io/repo/post/2026-11-11-01/"
+      `https://user.github.io/repo/${encoded}/`
     );
-    expect(fs.existsSync(path.join(outDir, "media/2026-11-11-01-1.jpg"))).toBe(
+    expect(fs.existsSync(path.join(outDir, `media/${prefix}-1.jpg`))).toBe(
       true
     );
     expect(fs.existsSync(path.join(outDir, "404.html"))).toBe(true);
@@ -223,4 +292,45 @@ describe("產生網站", () => {
     expect(category).toContain("site-logo.png");
     expect(category).not.toContain("site-hero.png");
   }, 30_000);
+});
+
+describe("搬移 WordPress 文章", () => {
+  it("拆出段落、小標題、圖片與圖說，取出原文連結", async () => {
+    const { parseWpContent } = await import("./importer/wordpress");
+    const html = `
+<p class="wp-block-paragraph">【大纪元讯】第一段&amp;内容。</p>
+<p class="wp-block-paragraph"><strong>小标题</strong></p>
+<div class="wp-block-image"><figure class="aligncenter"><img src="https://a.example/1.jpg" alt="" /></figure></div>
+<p class="has-text-align-center wp-block-paragraph">置中的图说。（提供）</p>
+<div class="wp-block-image"><figure><img src="https://a.example/2.jpg" alt="说明" /></figure></div>
+<p class="wp-block-paragraph"><em>斜体图说</em></p>
+<figure><img src="https://a.example/3.jpg" alt="" /><figcaption>内建图说</figcaption></figure>
+<p class="wp-block-paragraph">第二段，<strong>部分粗体</strong>仍是段落。</p>
+<p class="wp-block-paragraph">原文链接：https://source.example/x</p>`;
+    const { blocks, source } = parseWpContent(html);
+    expect(source).toBe("https://source.example/x");
+    expect(blocks).toEqual([
+      { type: "p", text: "【大纪元讯】第一段&内容。" },
+      { type: "h", text: "小标题" },
+      {
+        type: "img",
+        url: "https://a.example/1.jpg",
+        alt: "",
+        caption: "置中的图说。（提供）",
+      },
+      {
+        type: "img",
+        url: "https://a.example/2.jpg",
+        alt: "说明",
+        caption: "斜体图说",
+      },
+      {
+        type: "img",
+        url: "https://a.example/3.jpg",
+        alt: "",
+        caption: "内建图说",
+      },
+      { type: "p", text: "第二段，部分粗体仍是段落。" },
+    ]);
+  });
 });
