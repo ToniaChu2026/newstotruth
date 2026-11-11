@@ -3,5 +3,11 @@
   "tagline": "关注真相 传递希望",
   "description": "本站文章均为已获授权的转载与整理，文末附原文链接。",
   "pageSize": 12,
-  "timeZone": "Asia/Shanghai"
+  "timeZone": "Asia/Shanghai",
+  "logo": "/media/site-logo.png",
+  "hero": {
+    "image": "/media/site-hero.png",
+    "alt": "李洪志师父发表《为什么会有人类》《为什么要救度众生》《为什么人类是迷的社会》",
+    "link": "https://newstotruth.com/new-page/"
+  }
 }

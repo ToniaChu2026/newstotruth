@@ -193,4 +193,34 @@ describe("產生網站", () => {
     );
     expect(fs.existsSync(path.join(outDir, "404.html"))).toBe(true);
   }, 30_000);
+
+  it("設定標誌與橫幅時顯示在頁首與首頁最上方", async () => {
+    fs.writeFileSync(
+      path.join(dir, "site.json"),
+      JSON.stringify({
+        name: "站名",
+        logo: "/media/site-logo.png",
+        hero: {
+          image: "/media/site-hero.png",
+          alt: "横幅",
+          link: "https://a.example/x",
+        },
+      })
+    );
+    await addArticle(source, structured, { dir, download, now });
+    const outDir = path.join(dir, "dist");
+    await buildSite({ contentDir: dir, outDir, basePath: "/repo" });
+    const home = fs.readFileSync(path.join(outDir, "index.html"), "utf8");
+    expect(home).toContain('<img src="/repo/media/site-logo.png" alt="站名"');
+    expect(home).toMatch(
+      /<a href="https:\/\/a\.example\/x"[^>]*><img src="\/repo\/media\/site-hero\.png" alt="横幅"/
+    );
+    expect(home).not.toContain("头条");
+    const category = fs.readFileSync(
+      path.join(outDir, "category/inspired/index.html"),
+      "utf8"
+    );
+    expect(category).toContain("site-logo.png");
+    expect(category).not.toContain("site-hero.png");
+  }, 30_000);
 });

@@ -121,6 +121,7 @@ export async function buildSite(options: BuildOptions = {}) {
     page === 1 ? prefix : `${prefix}page/${page}/`;
 
   // 首頁：第一頁的第一篇當頭條。
+  const hasBanner = Boolean(config.hero?.image);
   const homePages = chunk(posts, config.pageSize);
   homePages.forEach((items, index) => {
     const page = index + 1;
@@ -136,8 +137,9 @@ export async function buildSite(options: BuildOptions = {}) {
       <ListPage
         site={site}
         total={posts.length}
-        hero={page === 1 ? (items[0] ?? null) : null}
-        posts={page === 1 ? items.slice(1) : items}
+        banner={page === 1 && hasBanner}
+        hero={page === 1 && !hasBanner ? (items[0] ?? null) : null}
+        posts={page === 1 && !hasBanner ? items.slice(1) : items}
         page={page}
         pages={homePages.length}
         pathFor={target => pagePath("/", target)}

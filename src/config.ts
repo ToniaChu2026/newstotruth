@@ -38,6 +38,10 @@ export type SiteConfig = {
   pageSize: number;
   /** 顯示日期與產生檔名時使用的時區。 */
   timeZone: string;
+  /** 頁首的標誌圖（/media/… 或 https://…）；沒有就顯示文字站名。 */
+  logo?: string;
+  /** 首頁最上方的橫幅圖；設定後首頁不再把最新一篇放大成頭條。 */
+  hero?: { image: string; alt?: string; link?: string };
 };
 
 const DEFAULTS: SiteConfig = {

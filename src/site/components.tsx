@@ -208,21 +208,34 @@ export function Page({
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap"
         />
+        {config.logo ? (
+          <link rel="icon" href={media(site, config.logo)} />
+        ) : null}
         <link rel="stylesheet" href={href(site, site.cssFile)} />
       </head>
       <body>
         <div className="mx-auto flex min-h-screen w-full max-w-[1200px] flex-col bg-white shadow-[0_0_30px_rgba(0,0,0,.06)]">
           <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/95 backdrop-blur">
-            <div className="flex items-center gap-4 px-5 pt-3 sm:px-10 lg:py-3">
+            <div className="flex items-center gap-4 px-5 pt-3 sm:px-10 lg:py-2">
               <a href={href(site, "/")} className="shrink-0">
-                <span className="block font-display text-[26px] leading-none tracking-wide text-stone-900">
-                  {config.name}
-                </span>
-                {config.tagline ? (
-                  <span className="mt-1.5 block text-[11px] tracking-[.3em] text-stone-400">
-                    {config.tagline}
-                  </span>
-                ) : null}
+                {config.logo ? (
+                  <img
+                    src={media(site, config.logo)}
+                    alt={config.name}
+                    className="h-14 w-auto lg:h-16"
+                  />
+                ) : (
+                  <>
+                    <span className="block font-display text-[26px] leading-none tracking-wide text-stone-900">
+                      {config.name}
+                    </span>
+                    {config.tagline ? (
+                      <span className="mt-1.5 block text-[11px] tracking-[.3em] text-stone-400">
+                        {config.tagline}
+                      </span>
+                    ) : null}
+                  </>
+                )}
               </a>
               <nav
                 aria-label="主导航"
@@ -342,6 +355,33 @@ function Hero({ site, post }: { site: Site; post: Post }) {
   );
 }
 
+/** 首頁最上方的橫幅圖（site.json 的 hero）。 */
+function Banner({ site }: { site: Site }) {
+  const hero = site.config.hero;
+  if (!hero?.image) return null;
+  const image = (
+    <img
+      src={media(site, hero.image)}
+      alt={hero.alt ?? ""}
+      className="mx-auto w-full max-w-[760px]"
+    />
+  );
+  return (
+    <section className="bg-[var(--brand-wash)] px-5 sm:px-10">
+      {hero.link ? (
+        <a
+          href={hero.link.startsWith("/") ? href(site, hero.link) : hero.link}
+          className="block"
+        >
+          {image}
+        </a>
+      ) : (
+        image
+      )}
+    </section>
+  );
+}
+
 function Pager({
   site,
   page,
@@ -387,6 +427,7 @@ export function ListPage({
   pages,
   pathFor,
   hero,
+  banner,
 }: {
   site: Site;
   heading?: string;
@@ -396,9 +437,11 @@ export function ListPage({
   pages: number;
   pathFor: (page: number) => string;
   hero?: Post | null;
+  banner?: boolean;
 }) {
   return (
     <>
+      {banner ? <Banner site={site} /> : null}
       {hero ? <Hero site={site} post={hero} /> : null}
       {heading ? (
         <div className="border-b border-stone-200 px-5 py-8 sm:px-10">
