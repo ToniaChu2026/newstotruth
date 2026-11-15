@@ -9,6 +9,7 @@
  * 出現在兩篇以上不同文章裡的同一張圖視為網站廣告，不採用；第二輪才下載圖片、寫文章。
  * 日期用 docx 檔名的那一期，同一期依目录順序排列。已存在的文章（同來源）會略過。
  */
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -42,19 +43,35 @@ import {
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-/** epochtimes 等網站經由 /_next/image?url=… 縮圖；直接取原圖。 */
-function originalImageUrl(url: string) {
+/**
+ * epochtimes 等網站經由 /_next/image?url=…&w=… 提供縮圖；網頁上的寬度常常太小，
+ * 原圖又可能超過下載上限，所以統一要 1200 像素寬的版本。
+ */
+function sizedImageUrl(url: string) {
   try {
     const parsed = new URL(url);
     if (
       parsed.pathname.endsWith("/_next/image") &&
       parsed.searchParams.get("url")
-    )
-      return new URL(parsed.searchParams.get("url")!, parsed).toString();
+    ) {
+      parsed.searchParams.set("w", "1200");
+      parsed.searchParams.set("q", "80");
+      return parsed.toString();
+    }
   } catch {
     // 保持原樣
   }
   return url;
+}
+
+/** 在 macOS 上用 sips 把大圖縮到長邊 1600 像素並重新壓縮；其他系統略過。 */
+function shrinkImage(file: string) {
+  if (process.platform !== "darwin") return;
+  if (fs.statSync(file).size <= 350_000) return;
+  if (!/\.(jpe?g|png)$/i.test(file)) return;
+  spawnSync("sips", ["-Z", "1600", file], { stdio: "ignore" });
+  if (/\.jpe?g$/i.test(file))
+    spawnSync("sips", ["-s", "formatOptions", "82", file], { stdio: "ignore" });
 }
 
 async function fetchCached(url: string, cacheDir: string) {
@@ -129,7 +146,7 @@ async function main() {
     let placed: Plan["placed"] = [];
     try {
       const source = await fetchCached(article.source, cacheDir);
-      const urls = source.images.map(image => originalImageUrl(image.url));
+      const urls = source.images.map(image => sizedImageUrl(image.url));
       const found = placeSourceImages(article, source.text, 10, urls);
       if (found === null) fetchError = "原文網頁裡找不到對應的正文";
       placed = (found ?? []).map(image => ({
@@ -176,8 +193,37 @@ async function main() {
     let count = 0;
     const save = (bytes: Buffer, extension: string) => {
       count += 1;
-      const name = `${prefix}-${count}.${extension}`;
-      fs.writeFileSync(path.join(mediaDir(dir), name), bytes);
+      let name = `${prefix}-${count}.${extension}`;
+      const file = path.join(mediaDir(dir), name);
+      fs.writeFileSync(file, bytes);
+      // 大張的 PNG 照片轉成 JPEG。
+      if (
+        process.platform === "darwin" &&
+        extension === "png" &&
+        bytes.length > 500_000
+      ) {
+        const jpg = file.replace(/\.png$/, ".jpg");
+        const result = spawnSync(
+          "sips",
+          [
+            "-s",
+            "format",
+            "jpeg",
+            "-s",
+            "formatOptions",
+            "82",
+            file,
+            "--out",
+            jpg,
+          ],
+          { stdio: "ignore" }
+        );
+        if (result.status === 0 && fs.existsSync(jpg)) {
+          fs.rmSync(file);
+          name = path.basename(jpg);
+        }
+      }
+      shrinkImage(path.join(mediaDir(dir), name));
       return `/media/${name}`;
     };
 
