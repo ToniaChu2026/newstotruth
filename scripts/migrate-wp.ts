@@ -6,6 +6,7 @@
  *   pnpm migrate-wp 50         最新 50 篇
  *   pnpm migrate-wp 12 13      跳過最新 12 篇，再搬 13 篇（第 13 到 25 篇）
  *   pnpm migrate-wp 500 --category 特稿   只搬原網站「特稿」分類的文章，分類一律設成特稿
+ *   pnpm migrate-wp <網址> <網址>… [--category 历史]   只搬這幾篇；加 --category 則放進該分類
  *
  * 已經存在的文章（同網址或同來源）會略過，可以放心重跑。
  */
@@ -71,9 +72,12 @@ async function main() {
   const onlyCategory = flag !== -1 ? args[flag + 1] : null;
   if (onlyCategory !== null && !isCategoryName(onlyCategory))
     throw new Error(`沒有這個分類：${onlyCategory}`);
-  const numbers = args.filter(
+  const rest = args.filter(
     (arg, index) => flag === -1 || (index !== flag && index !== flag + 1)
   );
+  // 給了文章網址時只搬那幾篇（網址的路徑就是 WordPress 的 slug）。
+  const urls = rest.filter(arg => /^https?:\/\//.test(arg));
+  const numbers = rest.filter(arg => !/^https?:\/\//.test(arg));
   const count = Math.max(1, Math.min(Number(numbers[0]) || 12, 500));
   const offset = Math.max(0, Number(numbers[1]) || 0);
   const dir = contentDir();
@@ -88,15 +92,27 @@ async function main() {
     ).map(category => [category.id, text(category.name)])
   );
 
-  const categoryId = onlyCategory
-    ? [...categories].find(([, name]) => name === onlyCategory)?.[0]
-    : undefined;
-  if (onlyCategory && categoryId === undefined)
+  const categoryId =
+    onlyCategory && !urls.length
+      ? [...categories].find(([, name]) => name === onlyCategory)?.[0]
+      : undefined;
+  if (onlyCategory && !urls.length && categoryId === undefined)
     throw new Error(`原網站沒有「${onlyCategory}」分類`);
   const filter = categoryId !== undefined ? `&categories=${categoryId}` : "";
 
   const posts: WpPost[] = [];
-  for (let page = 1; posts.length < offset + count; page += 1) {
+  for (const url of urls) {
+    const slug = decodeURIComponent(new URL(url).pathname).replace(
+      /^\/+|\/+$/g,
+      ""
+    );
+    const [post] = await getJson<WpPost[]>(
+      `${SITE}/wp-json/wp/v2/posts?slug=${encodeURIComponent(slug)}&_embed=wp:featuredmedia,wp:term`
+    );
+    if (post) posts.push(post);
+    else console.warn(`找不到文章：${url}`);
+  }
+  for (let page = 1; !urls.length && posts.length < offset + count; page += 1) {
     const batch = await getJson<WpPost[]>(
       `${SITE}/wp-json/wp/v2/posts?per_page=50&page=${page}&orderby=date&order=desc&_embed=wp:featuredmedia,wp:term${filter}`
     ).catch(() => []);
@@ -105,7 +121,7 @@ async function main() {
   }
 
   let added = 0;
-  for (const post of posts.slice(offset, offset + count)) {
+  for (const post of urls.length ? posts : posts.slice(offset, offset + count)) {
     const title = text(post.title.rendered);
     const decoded = (() => {
       try {
