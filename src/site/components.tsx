@@ -570,24 +570,14 @@ export function ArticlePage({
           <h2 className="text-xs font-bold tracking-[.3em] text-[var(--brand)]">
             相关文章
           </h2>
-          <ul className="mt-6 grid gap-8 sm:grid-cols-3">
+          <ul className="mt-4 divide-y divide-stone-200">
             {related.map(item => (
               <li key={item.slug}>
-                <a href={href(site, postPath(item))} className="group block">
-                  {item.image ? (
-                    <img
-                      src={media(site, item.image)}
-                      alt=""
-                      loading="lazy"
-                      className="aspect-[16/10] w-full bg-stone-100 object-cover"
-                    />
-                  ) : null}
-                  <p className="mt-3 text-[17px] leading-7 text-stone-800 group-hover:text-[var(--brand)]">
-                    {item.title}
-                  </p>
-                  <p className="mt-1 text-xs text-stone-400">
-                    {formatDate(site, item.date)}
-                  </p>
+                <a
+                  href={href(site, postPath(item))}
+                  className="block py-3 text-[17px] leading-7 text-stone-800 hover:text-[var(--brand)]"
+                >
+                  {item.title}
                 </a>
               </li>
             ))}

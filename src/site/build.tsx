@@ -187,7 +187,7 @@ export async function buildSite(options: BuildOptions = {}) {
       .filter(
         item => item.category === post.category && item.slug !== post.slug
       )
-      .slice(0, 3);
+      .slice(0, 5);
     write(
       `/${post.slug}/index.html`,
       {
