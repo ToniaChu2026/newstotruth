@@ -54,6 +54,8 @@ excerpt: 显示在首页卡片上的摘要。
 
 網站名稱、標語、每頁篇數在 [content/site.json](content/site.json)。
 
+`content/pages/` 放不屬於任何分類的獨立頁面（例如首頁橫幅連到的 `/new-page/`），格式和文章相同，檔名就是網址；它們不會出現在首頁、分類頁與搜尋裡。段落裡寫 `[文字](https://…)` 會變成連結。
+
 ## 本機預覽
 
 需要 Node.js 22 以上。

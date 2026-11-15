@@ -7,7 +7,7 @@ import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { build as viteBuild } from "vite";
 import { CATEGORIES, contentDir, loadSiteConfig } from "../config";
-import { loadPosts, mediaDir, type Post } from "../content";
+import { loadPages, loadPosts, mediaDir, type Post } from "../content";
 import {
   ArticlePage,
   formatDate,
@@ -15,8 +15,10 @@ import {
   ListPage,
   NotFoundPage,
   Page,
+  plainText,
   postPath,
   SearchPage,
+  StaticPage,
   type PageMeta,
   type Site,
 } from "./components";
@@ -85,6 +87,7 @@ export async function buildSite(options: BuildOptions = {}) {
     .replace(/\/+$/, "");
   const config = loadSiteConfig(content);
   const posts = loadPosts(content).filter(post => !post.draft);
+  const staticPages = loadPages(content).filter(page => !page.draft);
   // 首頁與近期文章只放有首圖的文章；沒有配圖的仍在分類頁、搜尋與文章頁。
   const homePosts = posts.filter(post => post.image);
 
@@ -205,6 +208,24 @@ export async function buildSite(options: BuildOptions = {}) {
     );
   }
 
+  for (const page of staticPages) {
+    const firstParagraph = page.blocks.find(block => block.type === "p");
+    write(
+      `/${page.slug}/index.html`,
+      {
+        title: `${page.title} | ${config.name}`,
+        description:
+          page.excerpt ||
+          (firstParagraph?.type === "p"
+            ? plainText(firstParagraph.text).slice(0, 160)
+            : ""),
+        path: postPath(page),
+        image: page.image,
+      },
+      <StaticPage site={site} page={page} />
+    );
+  }
+
   write(
     "/search/index.html",
     {
@@ -238,7 +259,7 @@ export async function buildSite(options: BuildOptions = {}) {
         image: post.image,
         dateText: formatDate(site, post.date),
         text: post.blocks
-          .map(block => (block.type === "img" ? "" : block.text))
+          .map(block => (block.type === "img" ? "" : plainText(block.text)))
           .join(" ")
           .slice(0, 6000),
       }))

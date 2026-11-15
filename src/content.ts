@@ -67,7 +67,9 @@ export function titleSlug(title: string) {
 export function uniqueSlug(base: string, dir = contentDir()) {
   const folder = postsDir(dir);
   const taken = (slug: string) =>
-    !isValidSlug(slug) || fs.existsSync(path.join(folder, `${slug}.md`));
+    !isValidSlug(slug) ||
+    fs.existsSync(path.join(folder, `${slug}.md`)) ||
+    fs.existsSync(path.join(pagesDir(dir), `${slug}.md`));
   if (!taken(base)) return base;
   for (let n = 2; n < 1000; n += 1)
     if (!taken(`${base}-${n}`)) return `${base}-${n}`;
@@ -151,6 +153,34 @@ export function postsDir(dir = contentDir()) {
 }
 export function mediaDir(dir = contentDir()) {
   return path.join(dir, "media");
+}
+export function pagesDir(dir = contentDir()) {
+  return path.join(dir, "pages");
+}
+
+/**
+ * 獨立頁面（content/pages/*.md）：格式和文章相同，檔名就是網址 /<檔名>/，
+ * 但不屬於任何分類，不會出現在首頁、分類頁、搜尋與相關文章裡。
+ */
+export function loadPages(dir = contentDir()): Post[] {
+  const folder = pagesDir(dir);
+  if (!fs.existsSync(folder)) return [];
+  return fs
+    .readdirSync(folder)
+    .filter(name => name.endsWith(".md"))
+    .map(name => {
+      const slug = name.slice(0, -3);
+      if (!isValidSlug(slug))
+        throw new Error(
+          `頁面檔名 ${name} 不能含空白、斜線、引號、? # % & < >，也不能是網站保留的名稱。`
+        );
+      if (fs.existsSync(path.join(postsDir(dir), name)))
+        throw new Error(
+          `content/pages/${name} 和 content/posts/${name} 的網址相同，請改其中一個檔名。`
+        );
+      return parsePost(slug, fs.readFileSync(path.join(folder, name), "utf8"));
+    })
+    .sort((a, b) => a.slug.localeCompare(b.slug));
 }
 
 /** 讀取所有文章，新的在前。壞掉的檔案直接報錯，避免網站悄悄少一篇。 */

@@ -346,6 +346,48 @@ describe("產生網站", () => {
     expect(category).not.toContain("site-hero.png");
     expect(category).toContain("GTM-TEST123");
   }, 30_000);
+
+  it("獨立頁面有自己的網址，內文連結可點，不進首頁、分類頁與搜尋", async () => {
+    fs.writeFileSync(
+      path.join(dir, "site.json"),
+      JSON.stringify({
+        hero: { image: "/media/site-hero.png", link: "/about/" },
+      })
+    );
+    await addArticle(source, structured, { dir, download, now });
+    fs.mkdirSync(path.join(dir, "pages"));
+    fs.writeFileSync(
+      path.join(dir, "pages/about.md"),
+      "---\ntitle: 关于本站\ndate: 2026-01-01T00:00:00.000Z\n---\n\n说明文字。\n\n[《视频》](https://v.example/1)\n"
+    );
+    const outDir = path.join(dir, "dist");
+    await buildSite({
+      contentDir: dir,
+      outDir,
+      basePath: "/repo",
+      siteUrl: "https://user.github.io/repo",
+    });
+    const read = (file: string) =>
+      fs.readFileSync(path.join(outDir, file), "utf8");
+    const page = read("about/index.html");
+    expect(page).toContain("<title>关于本站 | 新闻聚焦</title>");
+    expect(page).toContain('name="description" content="说明文字。"');
+    expect(page).toMatch(/<a href="https:\/\/v\.example\/1"[^>]*>《视频》<\/a>/);
+    const home = read("index.html");
+    expect(home).toMatch(/<a href="\/repo\/about\/"[^>]*><img/);
+    expect(home).not.toContain("关于本站");
+    expect(read("category/inspired/index.html")).not.toContain("关于本站");
+    expect(JSON.parse(read("search-index.json"))).toHaveLength(1);
+    expect(read("sitemap.xml")).toContain("https://user.github.io/repo/about/");
+    // 文章和頁面不能用同一個網址。
+    fs.writeFileSync(
+      path.join(dir, `pages/${slug}.md`),
+      "---\ntitle: 撞名\ndate: 2026-01-01T00:00:00.000Z\n---\n\n内容\n"
+    );
+    await expect(buildSite({ contentDir: dir, outDir })).rejects.toThrow(
+      "網址相同"
+    );
+  }, 30_000);
 });
 
 describe("搬移 WordPress 文章", () => {

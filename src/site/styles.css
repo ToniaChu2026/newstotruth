@@ -55,6 +55,14 @@
   .post-body figure + figure {
     margin-top: 1.5em;
   }
+  .post-body a {
+    color: var(--brand);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .post-body a:hover {
+    color: #8a4f00;
+  }
   .post-body h2 {
     margin-top: 1.8em;
     font-weight: 700;

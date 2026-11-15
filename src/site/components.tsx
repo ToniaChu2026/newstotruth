@@ -650,6 +650,89 @@ export function CategoryPage({
   );
 }
 
+const INLINE_LINK = /\[([^\[\]\n]+)\]\((https:\/\/[^\s()]+)\)/g;
+
+/** 段落文字；[文字](https://…) 會變成連結，其餘原樣輸出。 */
+function inline(text: string): ReactNode {
+  const parts: ReactNode[] = [];
+  let last = 0;
+  for (const match of text.matchAll(INLINE_LINK)) {
+    if (match.index > last) parts.push(text.slice(last, match.index));
+    parts.push(
+      <a
+        key={match.index}
+        href={match[2]}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {match[1]}
+      </a>
+    );
+    last = match.index + match[0].length;
+  }
+  if (!parts.length) return text;
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
+/** 去掉連結語法，只留文字（用於摘要與搜尋索引）。 */
+export function plainText(text: string) {
+  return text.replace(INLINE_LINK, "$1");
+}
+
+function PostBody({ site, blocks }: { site: Site; blocks: Post["blocks"] }) {
+  return (
+    <div className="post-body mt-8">
+      {blocks.map((block, index) =>
+        block.type === "p" ? (
+          <p key={index}>{inline(block.text)}</p>
+        ) : block.type === "h" ? (
+          <h2 key={index}>{block.text}</h2>
+        ) : (
+          <figure key={index}>
+            <img src={media(site, block.url)} alt={block.alt} loading="lazy" />
+            {block.caption ? <figcaption>{block.caption}</figcaption> : null}
+          </figure>
+        )
+      )}
+    </div>
+  );
+}
+
+/** 獨立頁面（content/pages/）：標題列加麵包屑，下面是置中的圖片與正文。 */
+export function StaticPage({ site, page }: { site: Site; page: Post }) {
+  return (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 bg-[var(--brand-wash)] px-5 py-7 sm:px-10">
+        <h1 className="text-[22px] leading-[1.5] text-stone-600 sm:text-[26px]">
+          {page.title}
+        </h1>
+        <nav aria-label="位置" className="text-xs text-stone-400">
+          <a href={href(site, "/")} className="hover:text-[var(--brand)]">
+            首页
+          </a>
+        </nav>
+      </div>
+      <article className="mx-auto max-w-[760px] px-5 pb-6 pt-10">
+        {page.image ? (
+          <figure>
+            <img
+              src={media(site, page.image)}
+              alt={page.caption ?? ""}
+              className="mx-auto max-w-full"
+            />
+            {page.caption ? (
+              <figcaption className="mt-2.5 text-center text-[14px] leading-7 text-stone-500">
+                {page.caption}
+              </figcaption>
+            ) : null}
+          </figure>
+        ) : null}
+        <PostBody site={site} blocks={page.blocks} />
+      </article>
+    </>
+  );
+}
+
 export function ArticlePage({
   site,
   post,
@@ -682,26 +765,7 @@ export function ArticlePage({
             ) : null}
           </figure>
         ) : null}
-        <div className="post-body mt-8">
-          {post.blocks.map((block, index) =>
-            block.type === "p" ? (
-              <p key={index}>{block.text}</p>
-            ) : block.type === "h" ? (
-              <h2 key={index}>{block.text}</h2>
-            ) : (
-              <figure key={index}>
-                <img
-                  src={media(site, block.url)}
-                  alt={block.alt}
-                  loading="lazy"
-                />
-                {block.caption ? (
-                  <figcaption>{block.caption}</figcaption>
-                ) : null}
-              </figure>
-            )
-          )}
-        </div>
+        <PostBody site={site} blocks={post.blocks} />
         {post.tags.length ? (
           <ul className="mt-10 flex flex-wrap gap-2">
             {post.tags.map(tag => (
