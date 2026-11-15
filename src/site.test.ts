@@ -263,6 +263,30 @@ describe("產生網站", () => {
     expect(fs.existsSync(path.join(outDir, "404.html"))).toBe(true);
   }, 30_000);
 
+  it("首頁只保留設定的頁數，較舊的文章仍在分類頁", async () => {
+    fs.writeFileSync(
+      path.join(dir, "site.json"),
+      JSON.stringify({ pageSize: 1, homePages: 1 })
+    );
+    await addArticle(source, { ...structured, title: "较旧的文章" }, {
+      dir,
+      download,
+      now: new Date("2026-11-01T00:00:00Z"),
+    });
+    await addArticle(
+      { ...source, sourceUrl: "https://publisher.example.com/new" },
+      { ...structured, title: "最新的文章" },
+      { dir, download, now }
+    );
+    const outDir = path.join(dir, "dist");
+    await buildSite({ contentDir: dir, outDir, basePath: "/" });
+    const read = (file: string) =>
+      fs.readFileSync(path.join(outDir, file), "utf8");
+    expect(read("index.html")).toContain("最新的文章");
+    expect(fs.existsSync(path.join(outDir, "page/2/index.html"))).toBe(false);
+    expect(read("category/inspired/page/2/index.html")).toContain("较旧的文章");
+  }, 30_000);
+
   it("沒有首圖的文章不放首頁，但仍在分類頁與文章頁", async () => {
     await addArticle(source, { ...structured }, { dir, download, now });
     await addArticle(

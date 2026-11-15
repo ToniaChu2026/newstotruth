@@ -36,6 +36,8 @@ export type SiteConfig = {
   tagline: string;
   description: string;
   pageSize: number;
+  /** 首頁最多幾頁（只放最新的文章）；較舊的文章從分類頁與搜尋找。0 表示不限。 */
+  homePages: number;
   /** 顯示日期與產生檔名時使用的時區。 */
   timeZone: string;
   /** 頁首的標誌圖（/media/… 或 https://…）；沒有就顯示文字站名。 */
@@ -51,6 +53,7 @@ const DEFAULTS: SiteConfig = {
   tagline: "",
   description: "",
   pageSize: 12,
+  homePages: 0,
   timeZone: "Asia/Shanghai",
 };
 
@@ -66,6 +69,7 @@ export function loadSiteConfig(dir = contentDir()): SiteConfig {
   return {
     ...DEFAULTS,
     ...raw,
+    homePages: Math.max(0, Math.floor(Number(raw.homePages) || 0)),
     gtm:
       raw.gtm && /^GTM-[A-Z0-9]+$/.test(raw.gtm) ? raw.gtm : undefined,
     pageSize: Math.max(

@@ -3,6 +3,7 @@
   "tagline": "关注真相 传递希望",
   "description": "本站文章均为已获授权的转载与整理，文末附原文链接。",
   "pageSize": 12,
+  "homePages": 5,
   "timeZone": "Asia/Shanghai",
   "gtm": "GTM-P5R8TSN",
   "logo": "/media/site-logo.png",

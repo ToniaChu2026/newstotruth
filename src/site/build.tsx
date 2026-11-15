@@ -124,7 +124,12 @@ export async function buildSite(options: BuildOptions = {}) {
 
   // 首頁：第一頁的第一篇當頭條。
   const hasBanner = Boolean(config.hero?.image);
-  const homePages = chunk(homePosts, config.pageSize);
+  const homePages = chunk(
+    config.homePages
+      ? homePosts.slice(0, config.homePages * config.pageSize)
+      : homePosts,
+    config.pageSize
+  );
   homePages.forEach((items, index) => {
     const page = index + 1;
     const route = pagePath("/", page);
