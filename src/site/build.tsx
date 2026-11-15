@@ -84,6 +84,8 @@ export async function buildSite(options: BuildOptions = {}) {
     .replace(/\/+$/, "");
   const config = loadSiteConfig(content);
   const posts = loadPosts(content).filter(post => !post.draft);
+  // 首頁與近期文章只放有首圖的文章；沒有配圖的仍在分類頁、搜尋與文章頁。
+  const homePosts = posts.filter(post => post.image);
 
   fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(path.join(outDir, "assets"), { recursive: true });
@@ -99,7 +101,7 @@ export async function buildSite(options: BuildOptions = {}) {
     config,
     base,
     origin,
-    recent: posts.slice(0, 5),
+    recent: homePosts.slice(0, 5),
     cssFile,
     searchFile,
   };
@@ -122,7 +124,7 @@ export async function buildSite(options: BuildOptions = {}) {
 
   // 首頁：第一頁的第一篇當頭條。
   const hasBanner = Boolean(config.hero?.image);
-  const homePages = chunk(posts, config.pageSize);
+  const homePages = chunk(homePosts, config.pageSize);
   homePages.forEach((items, index) => {
     const page = index + 1;
     const route = pagePath("/", page);
@@ -136,7 +138,7 @@ export async function buildSite(options: BuildOptions = {}) {
       },
       <ListPage
         site={site}
-        total={posts.length}
+        total={homePosts.length}
         banner={page === 1 && hasBanner}
         hero={page === 1 && !hasBanner ? (items[0] ?? null) : null}
         posts={page === 1 && !hasBanner ? items.slice(1) : items}
