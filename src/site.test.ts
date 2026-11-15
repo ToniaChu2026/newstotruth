@@ -283,11 +283,12 @@ describe("產生網站", () => {
     );
   }, 30_000);
 
-  it("設定標誌與橫幅時顯示在頁首與首頁最上方", async () => {
+  it("設定標誌、橫幅與 GTM 時放到每一頁", async () => {
     fs.writeFileSync(
       path.join(dir, "site.json"),
       JSON.stringify({
         name: "站名",
+        gtm: "GTM-TEST123",
         logo: "/media/site-logo.png",
         hero: {
           image: "/media/site-hero.png",
@@ -305,12 +306,15 @@ describe("產生網站", () => {
       /<a href="https:\/\/a\.example\/x"[^>]*><img src="\/repo\/media\/site-hero\.png" alt="横幅"/
     );
     expect(home).not.toContain("头条");
+    expect(home).toContain("'dataLayer','GTM-TEST123'");
+    expect(home).toContain("ns.html?id=GTM-TEST123");
     const category = fs.readFileSync(
       path.join(outDir, "category/inspired/index.html"),
       "utf8"
     );
     expect(category).toContain("site-logo.png");
     expect(category).not.toContain("site-hero.png");
+    expect(category).toContain("GTM-TEST123");
   }, 30_000);
 });
 

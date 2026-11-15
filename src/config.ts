@@ -42,6 +42,8 @@ export type SiteConfig = {
   logo?: string;
   /** 首頁最上方的橫幅圖；設定後首頁不再把最新一篇放大成頭條。 */
   hero?: { image: string; alt?: string; link?: string };
+  /** Google Tag Manager 容器編號，例如 GTM-P5R8TSN；GA 等追蹤都在 GTM 裡設定。 */
+  gtm?: string;
 };
 
 const DEFAULTS: SiteConfig = {
@@ -64,6 +66,8 @@ export function loadSiteConfig(dir = contentDir()): SiteConfig {
   return {
     ...DEFAULTS,
     ...raw,
+    gtm:
+      raw.gtm && /^GTM-[A-Z0-9]+$/.test(raw.gtm) ? raw.gtm : undefined,
     pageSize: Math.max(
       1,
       Math.min(Number(raw.pageSize) || DEFAULTS.pageSize, 60)

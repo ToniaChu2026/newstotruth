@@ -186,6 +186,13 @@ export function Page({
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {config.gtm ? (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${config.gtm}');`,
+            }}
+          />
+        ) : null}
         <title>{meta.title}</title>
         {meta.description ? (
           <meta name="description" content={meta.description} />
@@ -215,6 +222,16 @@ export function Page({
         <link rel="stylesheet" href={href(site, site.cssFile)} />
       </head>
       <body>
+        {config.gtm ? (
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${config.gtm}`}
+              height="0"
+              width="0"
+              style={{ display: "none", visibility: "hidden" }}
+            />
+          </noscript>
+        ) : null}
         <div className="mx-auto flex min-h-screen w-full max-w-[1200px] flex-col bg-white shadow-[0_0_30px_rgba(0,0,0,.06)]">
           <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/95 backdrop-blur">
             <div className="flex items-center gap-4 px-5 pt-3 sm:px-10 lg:py-2">
