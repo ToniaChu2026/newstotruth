@@ -88,11 +88,11 @@ function Nav({ site, current }: { site: Site; current?: string }) {
             key={item.key}
             href={href(site, item.path)}
             aria-current={active ? "page" : undefined}
-            className={`relative shrink-0 px-3 py-2 text-[15px] transition-colors hover:text-[var(--brand)] ${active ? "font-medium text-[var(--brand)]" : "text-stone-600"}`}
+            className={`relative shrink-0 border-r border-black/[.07] px-4 py-2 text-[15px] transition-colors last:border-r-0 hover:text-[var(--brand)] lg:px-5 lg:py-3 ${active ? "font-medium text-[var(--brand)]" : "text-stone-600"}`}
           >
             {item.label}
             {active ? (
-              <span className="absolute inset-x-3 -bottom-px h-0.5 bg-[var(--brand)]" />
+              <span className="absolute inset-x-4 -bottom-px h-0.5 bg-[var(--brand)] lg:hidden" />
             ) : null}
           </a>
         );
@@ -257,14 +257,14 @@ export function Page({
               </a>
               <nav
                 aria-label="主导航"
-                className="ml-auto hidden items-center lg:flex"
+                className="ml-6 hidden items-center lg:flex"
               >
                 <Nav site={site} current={meta.nav} />
               </nav>
               <a
                 href={href(site, "/search/")}
                 aria-label="搜索"
-                className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-stone-500 transition-colors hover:bg-stone-100 hover:text-[var(--brand)] lg:ml-2"
+                className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-stone-500 transition-colors hover:bg-stone-100 hover:text-[var(--brand)]"
               >
                 <Icon d={ICONS.search} className="h-[18px] w-[18px]" />
               </a>
