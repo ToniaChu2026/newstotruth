@@ -6,7 +6,8 @@
  *
  * 正文用 docx 的文字；圖片與圖說從原文链接取，抓不到時改用 docx 內的圖片。
  * 第一輪抓所有原文網頁（存在 <輸出資料夾>/pages/ 供重跑使用），
- * 出現在兩篇以上不同文章裡的同一張圖視為網站廣告，不採用；第二輪才下載圖片、寫文章。
+ * 出現在 5 篇以上不同文章裡的同一張圖視為網站廣告（例如看中國每篇都插的推廣圖），不採用；
+ * 兩三篇共用的通常是同一張新聞資料照，照常採用；第二輪才下載圖片、寫文章。
  * 日期用 docx 檔名的那一期，同一期依目录順序排列。已存在的文章（同來源）會略過。
  */
 import { spawnSync } from "node:child_process";
@@ -104,6 +105,9 @@ async function fetchCached(url: string, cacheDir: string) {
   }
 }
 
+/** 同一張圖出現在這麼多篇不同文章裡，就當作網站廣告。 */
+const SHARED_AD_MIN = 5;
+
 type Plan = {
   article: DocxArticle;
   placed: Array<PlacedImage & { url: string; alt: string }>;
@@ -170,9 +174,13 @@ async function main() {
       usedBy.get(image.url)!.add(plan.article.source);
     }
   const shared = new Set(
-    [...usedBy].filter(([, sources]) => sources.size >= 2).map(([url]) => url)
+    [...usedBy]
+      .filter(([, sources]) => sources.size >= SHARED_AD_MIN)
+      .map(([url]) => url)
   );
-  console.log(`共用圖片（視為廣告，不採用）：${shared.size} 張`);
+  console.log(
+    `共用圖片（${SHARED_AD_MIN} 篇以上，視為廣告，不採用）：${shared.size} 張`
+  );
 
   // 第二輪：下載圖片、寫文章。
   const report: Array<Record<string, unknown>> = [];
