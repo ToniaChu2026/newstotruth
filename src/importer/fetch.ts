@@ -174,7 +174,11 @@ function imageSource(tag: string) {
 }
 
 /** 擷取文章內的圖片候選；略過明顯的裝飾性小圖。 */
-export function extractImages(html: string, baseUrl: string) {
+export function extractImages(
+  html: string,
+  baseUrl: string,
+  maxImages = MAX_IMAGES
+) {
   const found: ExtractedImage[] = [];
   const seen = new Set<string>();
   const imageTags = html.match(/<img\b[^>]*>/gi) || [];
@@ -186,7 +190,7 @@ export function extractImages(html: string, baseUrl: string) {
       []),
   ];
   for (const tag of candidateTags) {
-    if (found.length >= MAX_IMAGES) break;
+    if (found.length >= maxImages) break;
     const raw = imageSource(tag);
     if (!raw) continue;
     try {

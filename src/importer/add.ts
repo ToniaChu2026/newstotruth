@@ -126,11 +126,12 @@ export function findBySource(sourceUrl: string, dir = contentDir()) {
 
 export async function fetchSource(
   url: string,
-  fetchPage: typeof fetchPublicPage = fetchPublicPage
+  fetchPage: typeof fetchPublicPage = fetchPublicPage,
+  maxImages?: number
 ): Promise<FetchedSource> {
   const sourceUrl = url.trim();
   const { html, finalUrl } = await fetchPage(sourceUrl);
-  const images = extractImages(html, finalUrl);
+  const images = extractImages(html, finalUrl, maxImages);
   return {
     sourceUrl,
     finalUrl,

@@ -84,6 +84,18 @@ corepack pnpm migrate-wp 12 12
 
 上面是第 13 到 24 篇；第一個數字是篇數，第二個是要跳過的最新篇數。
 
+匯入「真相聚焦 新闻周刊」的 docx（正文用 docx，圖片與圖說取自每篇的原文链接）：
+
+```bash
+python3 -I scripts/xwzk/extract_docx.py /tmp/xwzk XWZK-*.docx
+```
+
+```bash
+corepack pnpm -s exec tsx scripts/xwzk/import.ts /tmp/xwzk categories.json
+```
+
+`categories.json` 是 `{ "原文链接": "分類" }`，平常交給 Claude 寫。完整步驟見 [CLAUDE.md](CLAUDE.md)。
+
 不透過 Claude Code、想讓程式直接呼叫 Claude API 整理文章時，在 `.env` 填入 `ANTHROPIC_API_KEY` 後執行：
 
 ```bash

@@ -12,6 +12,16 @@
 
 從原本的 WordPress 網站搬文章：`corepack pnpm -s migrate-wp <篇數> [跳過篇數]`，例如 `migrate-wp 12 12` 是第 13 到 24 篇。原樣保留標題、摘要、正文、圖說、日期與網址，已存在的會略過。
 
+## 使用者給「真相聚焦 新闻周刊」的 docx（例如 Google Drive 資料夾裡的 `XWZK-YYMMDD.docx`）時
+
+每期 docx 有目录與十幾篇文章，每篇結尾是「原文链接」。依檔名的日期由舊到新整理：
+
+1. 下載 docx 到暫存資料夾（scratchpad），不要放進 repo。
+2. 拆文章：`python3 -I scripts/xwzk/extract_docx.py <輸出資料夾> <docx...>`，產生 `articles.json` 與 docx 內的圖片。確認篇數和每期目录、原文链接數一致。
+3. 讀過所有標題，寫一份 `{ "原文链接": "分類" }` 的 JSON（分類規則同下方）。
+4. 匯入：`corepack pnpm -s exec tsx scripts/xwzk/import.ts <輸出資料夾> <分類.json>`。正文用 docx 文字（含小標題）；圖片與圖說從原文链接抓，依段落對齊放回；原文抓不到時改用 docx 圖片與「图N：」圖說。出現在兩篇以上文章的同一張圖視為廣告。日期是該期日期，同一期依目录順序。已存在的來源會略過，可放心重跑（原文網頁會快取在輸出資料夾的 `pages/`）。
+5. 看 `import-report.json`：沒有圖片或原文抓取失敗的文章要個別檢查。抽查幾篇的 `.md`，`corepack pnpm build` 確認能產生，然後提交。
+
 ## 使用者給文章連結、要求加入網站時
 
 使用者只會貼連結並說「加入這篇」之類的話。照下面做，不要要求使用者設定 API 金鑰（那是 `article auto` 才需要的）。
