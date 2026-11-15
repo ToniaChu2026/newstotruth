@@ -1,11 +1,11 @@
 ---
-title: 为什么美国也有禁书？被封禁在CIA档案馆里
+title: 为什么美国也有禁书？被封禁在CIA档案馆
 date: 2025-07-07T02:24:39.000Z
 category: 文化
 tags: 
 image: /media/20250707-7bb6f3-1.jpg
 caption: 成为禁书后，据称Thomas也因此失去了在CIA的工作。
-source: https://newstotruth.com/%e4%b8%ba%e4%bb%80%e4%b9%88%e7%be%8e%e5%9b%bd%e4%b9%9f%e6%9c%89%e7%a6%81%e4%b9%a6%ef%bc%9f%e8%a2%ab%e5%b0%81%e7%a6%81%e5%9c%a8cia%e6%a1%a3%e6%a1%88%e9%a6%86%e9%87%8c/
+source: https://www.secretchina.com/news/gb/2025/06/26/1084356.html
 excerpt: Chan Thomas曾在美国中央情报局（CIA）工作过。在1963年的时候，他声称曾与外星人有过接触，从外星人那得到了别人无法得知的知识。而美国的中央情报局则是负责与外星人接触的重要部门。
 ---
 
