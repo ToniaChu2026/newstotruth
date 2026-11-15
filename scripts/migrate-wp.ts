@@ -5,6 +5,7 @@
  *   pnpm migrate-wp            最新 12 篇
  *   pnpm migrate-wp 50         最新 50 篇
  *   pnpm migrate-wp 12 13      跳過最新 12 篇，再搬 13 篇（第 13 到 25 篇）
+ *   pnpm migrate-wp 500 --category 特稿   只搬原網站「特稿」分類的文章，分類一律設成特稿
  *
  * 已經存在的文章（同網址或同來源）會略過，可以放心重跑。
  */
@@ -26,6 +27,7 @@ import {
 } from "../src/content";
 import { findBySource, mediaPrefix } from "../src/importer/add";
 import { downloadImage } from "../src/importer/fetch";
+import { saveCompactImage } from "../src/importer/images";
 import {
   htmlText as text,
   parseWpContent,
@@ -64,8 +66,16 @@ async function getJson<T>(url: string): Promise<T> {
 }
 
 async function main() {
-  const count = Math.max(1, Math.min(Number(process.argv[2]) || 12, 500));
-  const offset = Math.max(0, Number(process.argv[3]) || 0);
+  const args = process.argv.slice(2);
+  const flag = args.indexOf("--category");
+  const onlyCategory = flag !== -1 ? args[flag + 1] : null;
+  if (onlyCategory !== null && !isCategoryName(onlyCategory))
+    throw new Error(`沒有這個分類：${onlyCategory}`);
+  const numbers = args.filter(
+    (arg, index) => flag === -1 || (index !== flag && index !== flag + 1)
+  );
+  const count = Math.max(1, Math.min(Number(numbers[0]) || 12, 500));
+  const offset = Math.max(0, Number(numbers[1]) || 0);
   const dir = contentDir();
   fs.mkdirSync(postsDir(dir), { recursive: true });
   fs.mkdirSync(mediaDir(dir), { recursive: true });
@@ -78,10 +88,17 @@ async function main() {
     ).map(category => [category.id, text(category.name)])
   );
 
+  const categoryId = onlyCategory
+    ? [...categories].find(([, name]) => name === onlyCategory)?.[0]
+    : undefined;
+  if (onlyCategory && categoryId === undefined)
+    throw new Error(`原網站沒有「${onlyCategory}」分類`);
+  const filter = categoryId !== undefined ? `&categories=${categoryId}` : "";
+
   const posts: WpPost[] = [];
   for (let page = 1; posts.length < offset + count; page += 1) {
     const batch = await getJson<WpPost[]>(
-      `${SITE}/wp-json/wp/v2/posts?per_page=50&page=${page}&orderby=date&order=desc&_embed=wp:featuredmedia,wp:term`
+      `${SITE}/wp-json/wp/v2/posts?per_page=50&page=${page}&orderby=date&order=desc&_embed=wp:featuredmedia,wp:term${filter}`
     ).catch(() => []);
     if (!batch.length) break;
     posts.push(...batch);
@@ -106,7 +123,9 @@ async function main() {
       fs.existsSync(path.join(postsDir(dir), `${slug}.md`)) ||
       findBySource(source, dir)
     ) {
-      console.log(`略過（已存在）：${title}`);
+      console.log(
+        `略過（已存在）：${title}${findBySource(source, dir) ? `（同來源：/${findBySource(source, dir)!.slug}/，分類 ${findBySource(source, dir)!.category}）` : ""}`
+      );
       continue;
     }
 
@@ -122,8 +141,10 @@ async function main() {
           index: n,
         });
         n += 1;
-        const name = `${prefix}-${n}.${file.extension}`;
-        fs.writeFileSync(path.join(mediaDir(dir), name), file.bytes);
+        const name = saveCompactImage(
+          path.join(mediaDir(dir), `${prefix}-${n}.${file.extension}`),
+          file.bytes
+        );
         return `/media/${name}`;
       } catch (error) {
         skipped += 1;
@@ -173,6 +194,7 @@ async function main() {
     }
 
     const categoryName =
+      onlyCategory ??
       post.categories
         .map(id => categories.get(id) ?? "")
         .find(isCategoryName) ?? DEFAULT_CATEGORY_NAME;

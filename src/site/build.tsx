@@ -11,6 +11,7 @@ import { loadPosts, mediaDir, type Post } from "../content";
 import {
   ArticlePage,
   formatDate,
+  CategoryPage,
   ListPage,
   NotFoundPage,
   Page,
@@ -143,7 +144,6 @@ export async function buildSite(options: BuildOptions = {}) {
       },
       <ListPage
         site={site}
-        total={homePosts.length}
         banner={page === 1 && hasBanner}
         hero={page === 1 && !hasBanner ? (items[0] ?? null) : null}
         posts={page === 1 && !hasBanner ? items.slice(1) : items}
@@ -154,6 +154,10 @@ export async function buildSite(options: BuildOptions = {}) {
     );
   });
 
+  const counts = CATEGORIES.map(category => ({
+    name: category.name,
+    count: posts.filter(post => post.category === category.name).length,
+  }));
   for (const category of CATEGORIES) {
     const inCategory = posts.filter(post => post.category === category.name);
     const prefix = `/category/${category.slug}/`;
@@ -169,14 +173,14 @@ export async function buildSite(options: BuildOptions = {}) {
           path: route,
           nav: category.slug,
         },
-        <ListPage
+        <CategoryPage
           site={site}
-          heading={category.name}
-          total={inCategory.length}
+          name={category.name}
           posts={items}
           page={page}
           pages={pages.length}
           pathFor={target => pagePath(prefix, target)}
+          counts={counts}
         />
       );
     });

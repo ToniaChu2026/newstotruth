@@ -250,6 +250,12 @@ describe("產生網站", () => {
     );
     expect(read("category/inspired/index.html")).toContain("测试文章：标题");
     expect(read("category/focus/index.html")).toContain("暂无文章");
+    // 分類頁：標題列、麵包屑、側欄的搜尋與栏目（含篇數），和首頁不同。
+    const category = read("category/inspired/index.html");
+    expect(category).toContain('aria-label="位置"');
+    expect(category).toContain("近期文章");
+    expect(category).toMatch(/aria-current="page"[^>]*>感悟<span[^>]*>1<\/span>/);
+    expect(category).toContain('action="/repo/search/"');
     expect(fs.existsSync(path.join(outDir, "草稿文章"))).toBe(false);
     const index = JSON.parse(read("search-index.json"));
     expect(index).toHaveLength(1);

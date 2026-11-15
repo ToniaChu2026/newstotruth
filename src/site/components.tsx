@@ -438,8 +438,6 @@ function Pager({
 
 export function ListPage({
   site,
-  heading,
-  total,
   posts,
   page,
   pages,
@@ -448,8 +446,6 @@ export function ListPage({
   banner,
 }: {
   site: Site;
-  heading?: string;
-  total: number;
   posts: Post[];
   page: number;
   pages: number;
@@ -461,12 +457,6 @@ export function ListPage({
     <>
       {banner ? <Banner site={site} /> : null}
       {hero ? <Hero site={site} post={hero} /> : null}
-      {heading ? (
-        <div className="border-b border-stone-200 px-5 py-8 sm:px-10">
-          <h1 className="font-display text-3xl text-stone-900">{heading}</h1>
-          <p className="mt-2 text-sm text-stone-400">共 {total} 篇文章</p>
-        </div>
-      ) : null}
       <div className="px-5 py-10 sm:px-10">
         {posts.length === 0 && !hero ? (
           <p className="py-24 text-center text-stone-400">暂无文章。</p>
@@ -480,6 +470,181 @@ export function ListPage({
             <Pager site={site} page={page} pages={pages} pathFor={pathFor} />
           </>
         )}
+      </div>
+    </>
+  );
+}
+
+/** 分類頁的一列：左圖右文（沒有首圖時整列是文字），仿原網站的分類列表。 */
+function CategoryRow({ site, post }: { site: Site; post: Post }) {
+  const link = href(site, postPath(post));
+  return (
+    <article
+      className={`group grid gap-5 border-b border-stone-200 pb-8 ${post.image ? "sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-7" : ""}`}
+    >
+      {post.image ? (
+        <a href={link} className="block overflow-hidden bg-stone-100">
+          <img
+            src={media(site, post.image)}
+            alt=""
+            loading="lazy"
+            className="aspect-[16/10] w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          />
+        </a>
+      ) : null}
+      <div className="flex min-w-0 flex-col">
+        <h2 className="text-[21px] font-light leading-[1.45] text-stone-800">
+          <a href={link} className="hover:text-[var(--brand)]">
+            {post.title}
+          </a>
+        </h2>
+        {post.excerpt ? (
+          <p className="mt-3 line-clamp-4 text-[13.5px] leading-[1.9] text-stone-500">
+            {post.excerpt}
+          </p>
+        ) : null}
+        <div className="min-h-4 flex-1" />
+        <div className="flex items-center justify-between border-t border-stone-200 pt-3 text-xs text-stone-400">
+          <time dateTime={post.date}>{formatDate(site, post.date)}</time>
+          <a
+            href={link}
+            className="inline-flex items-center gap-1.5 font-medium text-[var(--brand)] hover:underline"
+          >
+            阅读全文 <Icon d={ICONS.arrow} className="h-3.5 w-3.5" />
+          </a>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function SidebarHeading({ children }: { children: ReactNode }) {
+  return (
+    <h2 className="border-b border-stone-200 pb-2 text-[15px] font-medium text-stone-700">
+      {children}
+    </h2>
+  );
+}
+
+/** 分類頁：標題列加麵包屑，左邊是左圖右文的列表，右邊是搜尋、近期文章與栏目。 */
+export function CategoryPage({
+  site,
+  name,
+  posts,
+  page,
+  pages,
+  pathFor,
+  counts,
+}: {
+  site: Site;
+  name: string;
+  posts: Post[];
+  page: number;
+  pages: number;
+  pathFor: (page: number) => string;
+  counts: Array<{ name: string; count: number }>;
+}) {
+  return (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 bg-[var(--brand-wash)] px-5 py-7 sm:px-10">
+        <h1 className="text-[26px] text-stone-600">{name}</h1>
+        <nav aria-label="位置" className="text-xs text-stone-400">
+          <a href={href(site, "/")} className="hover:text-[var(--brand)]">
+            首页
+          </a>
+          <span className="mx-2">›</span>
+          <span className="text-stone-500">{name}</span>
+        </nav>
+      </div>
+      <div className="px-5 py-10 sm:px-10 lg:grid lg:grid-cols-[minmax(0,1fr)_260px] lg:gap-12">
+        <div>
+          {posts.length ? (
+            <div className="space-y-8">
+              {posts.map(post => (
+                <CategoryRow key={post.slug} site={site} post={post} />
+              ))}
+            </div>
+          ) : (
+            <p className="py-24 text-center text-stone-400">暂无文章。</p>
+          )}
+          <div className="mt-10">
+            <Pager site={site} page={page} pages={pages} pathFor={pathFor} />
+          </div>
+        </div>
+        <aside className="mt-14 space-y-10 lg:mt-0">
+          <section>
+            <SidebarHeading>搜索</SidebarHeading>
+            <form
+              role="search"
+              action={href(site, "/search/")}
+              className="mt-4 flex"
+            >
+              <input
+                type="search"
+                name="q"
+                placeholder="输入关键词"
+                aria-label="搜索文章"
+                className="h-10 min-w-0 flex-1 border border-stone-300 px-3 text-sm"
+              />
+              <button
+                type="submit"
+                aria-label="搜索"
+                className="h-10 shrink-0 bg-stone-800 px-3 text-white hover:bg-[var(--brand)]"
+              >
+                <Icon d={ICONS.search} className="h-4 w-4" />
+              </button>
+            </form>
+          </section>
+          {site.recent.length ? (
+            <section>
+              <SidebarHeading>近期文章</SidebarHeading>
+              <ul className="mt-4 space-y-4">
+                {site.recent.map(post => (
+                  <li key={post.slug}>
+                    <a
+                      href={href(site, postPath(post))}
+                      className="group flex gap-3"
+                    >
+                      {post.image ? (
+                        <img
+                          src={media(site, post.image)}
+                          alt=""
+                          loading="lazy"
+                          className="h-14 w-14 shrink-0 bg-stone-100 object-cover"
+                        />
+                      ) : null}
+                      <span className="min-w-0 border-l-2 border-[var(--brand-soft)] pl-3">
+                        <span className="line-clamp-2 text-[13.5px] leading-6 text-stone-700 group-hover:text-[var(--brand)]">
+                          {post.title}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-stone-400">
+                          {formatDate(site, post.date)}
+                        </span>
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+          <section>
+            <SidebarHeading>栏目</SidebarHeading>
+            <ul className="mt-4 divide-y divide-white bg-[var(--brand-wash)]">
+              {counts.map(item => (
+                <li key={item.name}>
+                  <a
+                    href={href(site, categoryPath(item.name))}
+                    aria-current={item.name === name ? "page" : undefined}
+                    className={`flex items-center justify-between px-4 py-2.5 text-sm hover:text-[var(--brand)] ${item.name === name ? "font-medium text-[var(--brand)]" : "text-stone-600"}`}
+                  >
+                    {item.name}
+                    <span className="text-xs text-stone-400">{item.count}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </aside>
       </div>
     </>
   );
