@@ -1,7 +1,7 @@
 ---
 title: 为人权发声重于千万合约前NBA球星坎特华府演说内幕
 date: 2026-08-02T03:58:00.000Z
-category: 特稿
+category: 聚焦
 tags: 
 source: https://mhwindow.org/gb/20260730-8003/
 excerpt: 2026年7月23日，美国NBA前球员埃尼斯・坎特・弗里德姆在美国首都华盛顿举行的法轮功学员反迫害集会上发言。（明慧网）
