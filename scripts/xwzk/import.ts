@@ -198,7 +198,8 @@ async function main() {
       return `/media/${name}`;
     };
 
-    const resolved: Array<ResolvedImage & { after: number }> = [];
+    const resolved: Array<ResolvedImage & { after: number; replaces?: number }> =
+      [];
     for (const image of plan.placed) {
       if (shared.has(image.url)) continue;
       try {
@@ -212,6 +213,7 @@ async function main() {
           alt: image.alt,
           caption: image.caption,
           after: image.after,
+          replaces: image.replaces,
         });
       } catch {
         // 單張圖片失敗就略過。

@@ -44,7 +44,13 @@ export type PlacedImage = {
   /** 放在 docx 第幾個文字段落之後；-1 表示在正文之前（首圖）。 */
   after: number;
   caption: string | null;
+  /** 這張圖的圖說在 docx 裡也是一段正文時，那段的 blocks 索引（組合時拿掉）。 */
+  replaces?: number;
 };
+
+/** 像圖說的文字：結尾是出處括號，例如（大纪元AI制图）、(Getty Images)，或開頭是「图1：」。 */
+const CAPTION_LIKE =
+  /([（(][^（）()]{1,60}[）)]\s*[。.]?\s*$)|(^[图圖]\s*\d+(～\d+)?\s*[：:])/;
 
 const MARKER = /\{\{image:(\d+)\}\}/g;
 const HAS_MARKER = /\{\{image:\d+\}\}/;
@@ -129,16 +135,22 @@ export function placeSourceImages(
     );
     if (!markers.length) continue;
     let caption: string | null = null;
+    let replaces: number | undefined;
     const next = lines[i + 1];
-    if (
-      next &&
-      !HAS_MARKER.test(next) &&
-      !isText.has(i + 1) &&
-      !texts.some(item => sameLine(next, item.block.text)) &&
-      next.length >= 4 &&
-      next.length <= 300
-    ) {
+    const usable =
+      next && !HAS_MARKER.test(next) && next.length >= 4 && next.length <= 300;
+    const docxMatch = usable
+      ? (anchorAt.get(i + 1) ??
+        texts.findIndex(item => sameLine(next, item.block.text)))
+      : -1;
+    if (usable && docxMatch === -1 && !isText.has(i + 1)) {
       caption = next;
+      i += 1;
+    } else if (usable && docxMatch !== -1 && CAPTION_LIKE.test(next)) {
+      // docx 常把圖說也當成一段正文；看起來像圖說（結尾是出處括號或開頭是「图N：」）
+      // 就當圖說，並把 docx 裡那段重複的文字拿掉。
+      caption = next;
+      replaces = texts[docxMatch].index;
       i += 1;
     }
     for (const index of markers) {
@@ -153,6 +165,7 @@ export function placeSourceImages(
         index,
         after: i < start ? -1 : after,
         caption: markers.length === 1 ? caption : null,
+        ...(replaces !== undefined && markers.length === 1 ? { replaces } : {}),
       });
     }
   }
@@ -175,7 +188,7 @@ export type ResolvedImage = {
  */
 export function assembleBlocks(
   blocks: DocxBlock[],
-  images: Array<ResolvedImage & { after: number }>
+  images: Array<ResolvedImage & { after: number; replaces?: number }>
 ) {
   const ordered = [...images].sort((a, b) => a.after - b.after);
   const lead = ordered.filter(image => image.after === -1);
@@ -186,9 +199,12 @@ export function assembleBlocks(
     alt: image.alt,
     ...(image.caption ? { caption: image.caption } : {}),
   });
+  const replaced = new Set(
+    images.flatMap(image => (image.replaces !== undefined ? [image.replaces] : []))
+  );
   for (const image of lead) out.push(toBlock(image));
   blocks.forEach((block, index) => {
-    if (block.type === "p" || block.type === "h")
+    if ((block.type === "p" || block.type === "h") && !replaced.has(index))
       out.push({ type: block.type, text: block.text });
     for (const image of ordered)
       if (image.after === index) out.push(toBlock(image));

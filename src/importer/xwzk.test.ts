@@ -48,6 +48,33 @@ describe("對齊原文圖片", () => {
     ]);
   });
 
+  it("docx 把圖說當成正文時，像圖說的那段改當圖說並從正文拿掉", () => {
+    const withCaption: DocxBlock[] = [
+      ...blocks.slice(0, 3),
+      { type: "p", text: "示意图的说明文字。（大纪元AI制图）" },
+      blocks[3],
+    ];
+    const source = [
+      "测试文章标题",
+      ...blocks.slice(0, 3).map(block => (block.type === "img" ? "" : block.text)),
+      "{{image:0}}",
+      "示意图的说明文字。（大纪元AI制图）",
+      "第三段正文，最后的结论与展望内容。",
+    ].join("\n\n");
+    const placed = placeSourceImages(
+      { title: "测试文章标题", blocks: withCaption },
+      source
+    );
+    expect(placed).toEqual([
+      { index: 0, after: 2, caption: "示意图的说明文字。（大纪元AI制图）", replaces: 3 },
+    ]);
+    const { blocks: out } = assembleBlocks(
+      withCaption,
+      placed!.map(image => ({ ...image, url: "/media/a.jpg", alt: "" }))
+    );
+    expect(out.filter(block => block.type === "p")).toHaveLength(3);
+  });
+
   it("網頁裡找不到正文時回傳 null", () => {
     expect(
       placeSourceImages({ title: "x", blocks }, "完全无关的网页内容")
