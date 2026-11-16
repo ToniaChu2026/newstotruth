@@ -8,6 +8,7 @@
 - `content/media/`：圖片。檔名是文章標題的拼音加序號，例如 `santianzao42yiciwanggong-tuidangzhongxin-gongbu-1.jpg`、`-2.jpg`（匯入程式自動命名，見 `src/importer/media-name.ts`；和別篇撞名時加上日期）。
 - 只有草稿（`draft: true`）用到的圖片不會發佈到 `/media/`。
 - `content/site.json`：網站名稱、標語、每頁篇數、時區。
+- 每一頁的分享預覽（og、twitter card）、結構化資料、`sitemap.xml` 與 RSS（`/feed.xml`，最新 30 篇）都由產生器自動輸出，不需要在文章裡寫。
 - `src/site/`：產生器（React 只用來在建置時輸出 HTML，瀏覽器端只有搜尋頁的 `search.js`）。
 - `src/importer/`：抓取網頁、擷取文字與圖片、寫成文章檔。
 

@@ -110,7 +110,7 @@ export async function buildSite(options: BuildOptions = {}) {
     cssFile,
     searchFile,
   };
-  const written: string[] = [];
+  const written: Array<{ path: string; lastmod?: string }> = [];
   const write = (file: string, meta: PageMeta, body: ReactElement) => {
     const target = path.join(outDir, file);
     fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -122,7 +122,8 @@ export async function buildSite(options: BuildOptions = {}) {
         </Page>
       )}`
     );
-    if (!meta.noindex) written.push(meta.path);
+    if (!meta.noindex)
+      written.push({ path: meta.path, lastmod: meta.lastmod });
   };
   const pagePath = (prefix: string, page: number) =>
     page === 1 ? prefix : `${prefix}page/${page}/`;
@@ -142,9 +143,12 @@ export async function buildSite(options: BuildOptions = {}) {
       `${route}index.html`,
       {
         title: page === 1 ? config.name : `第 ${page} 页 | ${config.name}`,
-        description: config.description || config.tagline,
+        description:
+          (config.description || config.tagline) +
+          (page === 1 ? "" : `（第 ${page} 页）`),
         path: route,
         nav: "/",
+        lastmod: items[0]?.date,
       },
       <ListPage
         site={site}
@@ -172,10 +176,16 @@ export async function buildSite(options: BuildOptions = {}) {
       write(
         `${route}index.html`,
         {
-          title: `${category.name} | ${config.name}`,
-          description: `${config.name}「${category.name}」栏目文章`,
+          title:
+            page === 1
+              ? `${category.name} | ${config.name}`
+              : `${category.name} - 第 ${page} 页 | ${config.name}`,
+          description:
+            `${config.name}「${category.name}」栏目文章` +
+            (page === 1 ? "" : `（第 ${page} 页）`),
           path: route,
           nav: category.slug,
+          lastmod: items[0]?.date,
         },
         <CategoryPage
           site={site}
@@ -204,6 +214,12 @@ export async function buildSite(options: BuildOptions = {}) {
         path: postPath(post),
         image: post.image,
         nav: CATEGORIES.find(category => category.name === post.category)?.slug,
+        article: {
+          published: post.date,
+          section: post.category,
+          source: post.source,
+        },
+        lastmod: post.date,
       },
       <ArticlePage site={site} post={post} related={related} />
     );
@@ -299,8 +315,37 @@ export async function buildSite(options: BuildOptions = {}) {
     fs.writeFileSync(
       path.join(outDir, "sitemap.xml"),
       `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${written
-        .map(route => `  <url><loc>${xml(origin + route)}</loc></url>`)
+        .map(
+          ({ path: route, lastmod }) =>
+            `  <url><loc>${xml(origin + route)}</loc>${lastmod ? `<lastmod>${lastmod.slice(0, 10)}</lastmod>` : ""}</url>`
+        )
         .join("\n")}\n</urlset>\n`
+    );
+    // RSS：最新 30 篇，只放摘要。
+    fs.writeFileSync(
+      path.join(outDir, "feed.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n<channel>\n` +
+        `<title>${xml(config.name)}</title>\n<link>${xml(origin)}/</link>\n` +
+        `<description>${xml(config.description || config.tagline || config.name)}</description>\n` +
+        `<language>zh-Hans</language>\n` +
+        `<atom:link href="${xml(origin)}/feed.xml" rel="self" type="application/rss+xml"/>\n` +
+        (posts[0]
+          ? `<lastBuildDate>${new Date(posts[0].date).toUTCString()}</lastBuildDate>\n`
+          : "") +
+        posts
+          .slice(0, 30)
+          .map(post => {
+            const link = xml(origin + postPath(post));
+            return (
+              `<item>\n<title>${xml(post.title)}</title>\n<link>${link}</link>\n` +
+              `<guid isPermaLink="true">${link}</guid>\n` +
+              `<pubDate>${new Date(post.date).toUTCString()}</pubDate>\n` +
+              `<category>${xml(post.category)}</category>\n` +
+              `<description>${xml(post.excerpt)}</description>\n</item>\n`
+            );
+          })
+          .join("") +
+        `</channel>\n</rss>\n`
     );
     fs.writeFileSync(
       path.join(outDir, "robots.txt"),

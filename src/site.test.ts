@@ -364,6 +364,80 @@ describe("產生網站", () => {
     expect(category).toContain("GTM-TEST123");
   }, 30_000);
 
+  it("分享預覽與搜尋引擎標籤：og、twitter、結構化資料、分頁標題、sitemap 日期與 RSS", async () => {
+    fs.writeFileSync(
+      path.join(dir, "site.json"),
+      JSON.stringify({
+        pageSize: 1,
+        logo: "/media/site-logo.png",
+        hero: { image: "/media/site-hero.png" },
+      })
+    );
+    await addArticle(source, structured, { dir, download, now });
+    await addArticle(
+      { ...source, sourceUrl: "https://publisher.example.com/plain", images: [] },
+      { ...structured, title: "没有配图 <的> 文章" },
+      { dir, download, now: new Date("2026-11-01T00:00:00Z") }
+    );
+    const outDir = path.join(dir, "dist");
+    const origin = "https://user.github.io/repo";
+    await buildSite({ contentDir: dir, outDir, basePath: "/repo", siteUrl: origin });
+    const read = (file: string) =>
+      fs.readFileSync(path.join(outDir, file), "utf8");
+    const ld = (html: string) => {
+      const found = /<script type="application\/ld\+json">(.*?)<\/script>/.exec(html);
+      return found ? JSON.parse(found[1]) : null;
+    };
+
+    const article = read(`${slug}/index.html`);
+    expect(article).toContain('property="og:type" content="article"');
+    expect(article).toContain('name="twitter:card" content="summary_large_image"');
+    expect(article).toContain('property="article:section" content="感悟"');
+    expect(article).toMatch(/property="article:published_time" content="2026-11-10T/);
+    expect(ld(article)).toMatchObject({
+      "@type": "NewsArticle",
+      headline: "测试文章：标题",
+      articleSection: "感悟",
+      image: [`${origin}/media/${prefix}-1.jpg`],
+      mainEntityOfPage: `${origin}/${encodeURIComponent(slug)}/`,
+      isBasedOn: "https://publisher.example.com/story",
+    });
+
+    // 沒有配圖的文章用網站標誌當分享圖，結構化資料裡的 < 不會破壞頁面。
+    const plain = read("没有配图-的-文章/index.html");
+    expect(plain).toContain(
+      `property="og:image" content="${origin}/media/site-logo.png"`
+    );
+    expect(plain).toContain('name="twitter:card" content="summary"');
+    expect(ld(plain).headline).toBe("没有配图 <的> 文章");
+    expect(ld(plain).image).toBeUndefined();
+
+    const home = read("index.html");
+    expect(home).toContain('property="og:type" content="website"');
+    // 橫幅版型的首頁沒有看得見的大標題，放一個只給搜尋引擎與讀屏軟體的 h1。
+    expect(home.match(/<h1[ >]/g)).toHaveLength(1);
+    expect(home).toContain('<h1 class="sr-only">新闻聚焦</h1>');
+    expect(ld(home)).toMatchObject({ "@type": "WebSite", url: `${origin}/` });
+    expect(home).toContain(
+      `<link rel="alternate" type="application/rss+xml" title="新闻聚焦" href="${origin}/feed.xml"/>`
+    );
+    expect(read("category/inspired/index.html")).toContain(
+      "<title>感悟 | 新闻聚焦</title>"
+    );
+    const second = read("category/inspired/page/2/index.html");
+    expect(second).toContain("<title>感悟 - 第 2 页 | 新闻聚焦</title>");
+    expect(second).toContain("栏目文章（第 2 页）");
+    expect(ld(second)).toBeNull();
+
+    expect(read("sitemap.xml")).toContain(
+      `<loc>${origin}/${encodeURIComponent(slug)}/</loc><lastmod>2026-11-10</lastmod>`
+    );
+    const feed = read("feed.xml");
+    expect(feed).toContain(`<link>${origin}/${encodeURIComponent(slug)}/</link>`);
+    expect(feed).toContain("<title>没有配图 &lt;的&gt; 文章</title>");
+    expect(feed.indexOf("测试文章：标题")).toBeLessThan(feed.indexOf("没有配图"));
+  }, 30_000);
+
   it("草稿的圖片不發佈", async () => {
     await addArticle(source, structured, { dir, download, now });
     await addArticle(

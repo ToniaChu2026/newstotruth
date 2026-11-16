@@ -31,6 +31,7 @@ const RESERVED_SLUGS = new Set([
   "post",
   "404.html",
   "sitemap.xml",
+  "feed.xml",
   "robots.txt",
   "search-index.json",
 ]);

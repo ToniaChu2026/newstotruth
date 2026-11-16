@@ -22,6 +22,10 @@ export type PageMeta = {
   noindex?: boolean;
   /** 目前所在的導覽項目：首頁是 "/"，分類頁是分類的 slug。 */
   nav?: string;
+  /** 文章頁才有：發佈時間、分類與原文連結，用於分享預覽與搜尋引擎的結構化資料。 */
+  article?: { published: string; section: string; source?: string | null };
+  /** 這一頁最後更新的日期（ISO 時間），寫進 sitemap。 */
+  lastmod?: string;
 };
 
 export function href(site: Site, path: string) {
@@ -174,13 +178,48 @@ export function Page({
 }) {
   const { config } = site;
   const canonical = site.origin ? `${site.origin}${meta.path}` : null;
-  const image = meta.image
-    ? meta.image.startsWith("/")
-      ? site.origin
-        ? `${site.origin}${meta.image}`
-        : null
-      : meta.image
-    : null;
+  const absolute = (url?: string | null) =>
+    url
+      ? url.startsWith("/")
+        ? site.origin
+          ? `${site.origin}${url}`
+          : null
+        : url
+      : null;
+  // 沒有自己圖片的頁面（列表頁、沒配圖的文章）分享時用網站標誌。
+  const ownImage = absolute(meta.image);
+  const logo = absolute(config.logo);
+  const image = ownImage ?? logo;
+  const structured = !canonical
+    ? null
+    : meta.article
+      ? {
+          "@context": "https://schema.org",
+          "@type": "NewsArticle",
+          headline: meta.title.replace(` | ${config.name}`, ""),
+          ...(meta.description ? { description: meta.description } : {}),
+          ...(ownImage ? { image: [ownImage] } : {}),
+          datePublished: meta.article.published,
+          articleSection: meta.article.section,
+          inLanguage: "zh-Hans",
+          mainEntityOfPage: canonical,
+          ...(meta.article.source ? { isBasedOn: meta.article.source } : {}),
+          publisher: {
+            "@type": "Organization",
+            name: config.name,
+            ...(logo ? { logo: { "@type": "ImageObject", url: logo } } : {}),
+          },
+        }
+      : meta.path === "/"
+        ? {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: config.name,
+            url: canonical,
+            inLanguage: "zh-Hans",
+            ...(meta.description ? { description: meta.description } : {}),
+          }
+        : null;
   return (
     <html lang="zh-Hans">
       <head>
@@ -204,8 +243,39 @@ export function Page({
           <meta property="og:description" content={meta.description} />
         ) : null}
         <meta property="og:site_name" content={config.name} />
+        <meta property="og:type" content={meta.article ? "article" : "website"} />
+        <meta property="og:locale" content="zh_CN" />
         {canonical ? <meta property="og:url" content={canonical} /> : null}
         {image ? <meta property="og:image" content={image} /> : null}
+        {meta.article ? (
+          <>
+            <meta
+              property="article:published_time"
+              content={meta.article.published}
+            />
+            <meta property="article:section" content={meta.article.section} />
+          </>
+        ) : null}
+        <meta
+          name="twitter:card"
+          content={ownImage ? "summary_large_image" : "summary"}
+        />
+        {site.origin ? (
+          <link
+            rel="alternate"
+            type="application/rss+xml"
+            title={config.name}
+            href={`${site.origin}/feed.xml`}
+          />
+        ) : null}
+        {structured ? (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(structured).replace(/</g, "\\u003c"),
+            }}
+          />
+        ) : null}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -455,6 +525,13 @@ export function ListPage({
 }) {
   return (
     <>
+      {hero ? null : (
+        <h1 className="sr-only">
+          {page === 1
+            ? site.config.name
+            : `${site.config.name} 第 ${page} 页`}
+        </h1>
+      )}
       {banner ? <Banner site={site} /> : null}
       {hero ? <Hero site={site} post={hero} /> : null}
       <div className="px-5 py-10 sm:px-10">
