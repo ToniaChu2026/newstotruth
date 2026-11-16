@@ -187,7 +187,7 @@ async function main() {
       new Date(`${article.issue}T12:00:00+08:00`).getTime() -
         article.order * 60_000
     );
-    const prefix = mediaPrefix(article.source, date, dir);
+    const prefix = mediaPrefix(article.title, date, dir);
     let count = 0;
     const save = (bytes: Buffer, extension: string) => {
       count += 1;

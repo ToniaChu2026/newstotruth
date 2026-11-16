@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { blocksFromMarkedText } from "../blocks";
@@ -12,6 +11,7 @@ import {
   serializePost,
 } from "../content";
 import type { StructureFn } from "./ai";
+import { uniqueMediaPrefix } from "./media-name";
 import {
   downloadImage,
   extractImages,
@@ -87,13 +87,21 @@ export function captionMap(input: StructuredInput["captions"]) {
 }
 
 /** 媒體檔名用日期加來源雜湊，保持英數字，網址不需要編碼。 */
-export function mediaPrefix(sourceUrl: string, date: Date, dir: string) {
+/**
+ * 圖片檔名前綴：文章標題的拼音（見 media-name.ts），圖片再接 -1、-2。
+ * 和別篇文章撞名時加上日期。
+ */
+export function mediaPrefix(title: string, date: Date, dir: string) {
   const day = dayInTimeZone(date, loadSiteConfig(dir).timeZone).replace(
     /-/g,
     ""
   );
-  const hash = createHash("sha1").update(sourceUrl).digest("hex").slice(0, 6);
-  return `${day}-${hash}`;
+  const files = fs.existsSync(mediaDir(dir)) ? fs.readdirSync(mediaDir(dir)) : [];
+  return uniqueMediaPrefix(title, day, prefix => {
+    // 前綴只有小寫字母、數字與 -，不需要跳脫。
+    const pattern = new RegExp(`^${prefix}-\\d+\\.[a-z0-9]+$`, "i");
+    return files.some(file => pattern.test(file));
+  });
 }
 
 export function resolveContent(input: StructuredInput, sourceText: string) {
@@ -186,7 +194,7 @@ export async function addArticle(
   );
 
   const slug = uniqueSlug(titleSlug(article.title), dir);
-  const prefix = mediaPrefix(source.sourceUrl, now, dir);
+  const prefix = mediaPrefix(article.title, now, dir);
   fs.mkdirSync(mediaDir(dir), { recursive: true });
   fs.mkdirSync(postsDir(dir), { recursive: true });
   const saved = new Map<

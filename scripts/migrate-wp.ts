@@ -146,7 +146,7 @@ async function main() {
     }
 
     const date = new Date(`${post.date_gmt}Z`);
-    const prefix = mediaPrefix(source, date, dir);
+    const prefix = mediaPrefix(title, date, dir);
     let n = 0;
     let skipped = 0;
     const save = async (image: RawImage) => {

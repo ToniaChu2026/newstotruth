@@ -16,6 +16,7 @@ import {
   type FetchedSource,
 } from "./importer/add";
 import { buildSite } from "./site/build";
+import { titleToPinyin, uniqueMediaPrefix } from "./importer/media-name";
 
 let dir: string;
 beforeEach(() => {
@@ -139,7 +140,23 @@ describe("文章網址", () => {
 });
 
 const slug = "测试文章标题";
-const prefix = mediaPrefix(source.sourceUrl, now, "/nonexistent");
+const prefix = mediaPrefix(structured.title, now, "/nonexistent");
+
+describe("圖片檔名", () => {
+  it("用標題的拼音，多音字依詞語，撞名時加日期", () => {
+    expect(prefix).toBe("ceshiwenzhang-biaoti");
+    expect(titleToPinyin("三天遭42亿次网攻 退党中心：攻不破22年坚守")).toBe(
+      "santianzao42yiciwanggong-tuidangzhongxin-gongbu"
+    );
+    expect(titleToPinyin("【特稿】重庆银行行长（上）")).toBe(
+      "chongqingyinhanghangchang-shang"
+    );
+    const taken = new Set(["ceshi", "ceshi-20261111"]);
+    expect(uniqueMediaPrefix("测试", "20261111", p => taken.has(p))).toBe(
+      "ceshi-20261111-2"
+    );
+  });
+});
 
 describe("新增文章", () => {
   it("寫成文章檔：標題當網址，首圖與圖說保留，其餘圖片留在原位", async () => {
