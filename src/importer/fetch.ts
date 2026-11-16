@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { lookup } from "node:dns/promises";
 import { DEFAULT_CATEGORY_NAME, isCategoryName } from "../config";
 import {
@@ -13,6 +14,15 @@ const MIN_IMAGE_BYTES = 8_000;
 const MAX_IMAGES = 8;
 const USER_AGENT =
   "NewsToTruth-Authorized-Import/1.0 (+authorized-content-only)";
+
+/**
+ * 圖片伺服器不給原圖時回傳的佔位圖（內容的 MD5）。
+ * 看中国的「看中國 SECRETCHINA.COM」橋景圖有 JPEG 與 WebP 兩種版本。
+ */
+const PLACEHOLDER_IMAGES = new Set([
+  "a5586c68f61477675d420fc285cd115f",
+  "13f32ee705b80cc3f970d4886acf5032",
+]);
 
 export type ExtractedImage = {
   url: string;
@@ -194,6 +204,33 @@ function looksDecorative(tag: string, url: string) {
   return false;
 }
 
+/** 網域的最後兩段，用來判斷兩個網址是不是同一個網站（img6.example.com 和 www.example.com 算同一個）。 */
+function siteOf(hostname: string) {
+  return hostname.toLowerCase().split(".").slice(-2).join(".");
+}
+
+/**
+ * 圖片外面包著連到別的網站的連結：是廣告或推廣圖，不是文章的圖
+ * （例如看中国每篇正文中間插的 <a href="https://廣告主"><img …></a>）。
+ * 連到同一個網站或直接連到圖檔（點擊放大）的不算。
+ */
+export function linksOffsite(html: string, imgStart: number, baseUrl: string) {
+  const before = html.slice(Math.max(0, imgStart - 1000), imgStart);
+  const anchors = Array.from(before.matchAll(/<a\b[^>]*>/gi));
+  const open = anchors[anchors.length - 1];
+  if (!open || before.slice(open.index).includes("</a")) return false;
+  const href = readAttribute(open[0], "href");
+  if (!href) return false;
+  try {
+    const target = new URL(href, baseUrl);
+    if (!["http:", "https:"].includes(target.protocol)) return false;
+    if (/\.(jpe?g|png|gif|webp|avif)$/i.test(target.pathname)) return false;
+    return siteOf(target.hostname) !== siteOf(new URL(baseUrl).hostname);
+  } catch {
+    return false;
+  }
+}
+
 function imageSource(tag: string) {
   const raw =
     readAttribute(tag, "data-src") ||
@@ -302,6 +339,7 @@ export function extractImages(
       if (!["http:", "https:"].includes(new URL(url).protocol) || seen.has(url))
         continue;
       if (looksDecorative(tag, url)) continue;
+      if (start !== -1 && linksOffsite(html, start, baseUrl)) continue;
       seen.add(url);
       found.push({
         url,
@@ -466,6 +504,8 @@ export async function downloadImage(candidate: ExtractedImage) {
     if (!bytes.length || bytes.length > MAX_IMAGE_BYTES)
       throw new Error("圖片超過大小上限。");
     if (bytes.length < MIN_IMAGE_BYTES) throw new Error("圖片太小，略過。");
+    if (PLACEHOLDER_IMAGES.has(createHash("md5").update(bytes).digest("hex")))
+      throw new Error("來源回傳的是佔位圖，不是文章的圖片。");
     return {
       bytes,
       contentType,

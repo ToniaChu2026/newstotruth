@@ -19,6 +19,26 @@ describe("來源網頁解析", () => {
     expect(readable).not.toContain("ignore");
   });
 
+  it("略過包在站外連結裡的廣告圖，保留連到本站或圖檔的圖片", () => {
+    const html = [
+      '<p><img src="//img6.publisher.example.com/pic/a.jpg" alt="正文图"></p>',
+      '<center><a href="https://shop.example.net/" target="_blank"><img src="//img6.publisher.example.com/pic/ad.jpg" width=300px></a></center>',
+      '<a href="/news/related.html"><img src="/pic/b.jpg" alt="站内"></a>',
+      '<a href="https://cdn.example.org/full/c.jpg"><img src="/pic/c.jpg" alt="放大"></a>',
+      '<a href="https://shop.example.net/">文字链接</a><p><img src="/pic/d.jpg" alt="连结已结束"></p>',
+    ].join("\n");
+    const base = "https://www.publisher.example.com/news/1.html";
+    expect(extractImages(html, base).map(image => image.altText)).toEqual([
+      "正文图",
+      "站内",
+      "放大",
+      "连结已结束",
+    ]);
+    expect(htmlToReadableTextWithImageMarkers(html, base)).not.toContain(
+      "{{image:4}}"
+    );
+  });
+
   it("解析、去重並依序編號圖片，略過裝飾性小圖", () => {
     const images = extractImages(
       '<img src="/hero.jpg" alt="Hero"><img src="/hero.jpg"><img src="data:image/png;base64,aaa"><img data-src="https://cdn.example.com/inline.webp" alt="Inline"><img src="/logo.png" alt="logo"><img src="/tiny.png" width="32" height="32">',
