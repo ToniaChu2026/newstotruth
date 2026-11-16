@@ -364,7 +364,7 @@ describe("產生網站", () => {
     expect(category).toContain("GTM-TEST123");
   }, 30_000);
 
-  it("草稿的圖片不發佈；改過檔名的圖片舊網址仍可用", async () => {
+  it("草稿的圖片不發佈", async () => {
     await addArticle(source, structured, { dir, download, now });
     await addArticle(
       { ...source, sourceUrl: "https://publisher.example.com/draft" },
@@ -375,22 +375,11 @@ describe("產生網站", () => {
     expect(fs.existsSync(path.join(dir, `media/${draftPrefix}-1.jpg`))).toBe(
       true
     );
-    fs.writeFileSync(
-      path.join(dir, "media-aliases.json"),
-      JSON.stringify({
-        "20261110-abc123-1.jpg": `${prefix}-1.jpg`,
-        "20261110-def456-1.jpg": `${draftPrefix}-1.jpg`,
-        "../escape.jpg": `${prefix}-1.jpg`,
-      })
-    );
     const outDir = path.join(dir, "dist");
     await buildSite({ contentDir: dir, outDir, basePath: "/" });
     const published = fs.readdirSync(path.join(outDir, "media"));
     expect(published).toContain(`${prefix}-1.jpg`);
-    expect(published).toContain("20261110-abc123-1.jpg");
     expect(published.some(file => file.startsWith(draftPrefix))).toBe(false);
-    expect(published).not.toContain("20261110-def456-1.jpg");
-    expect(fs.existsSync(path.join(outDir, "escape.jpg"))).toBe(false);
   }, 30_000);
 
   it("獨立頁面有自己的網址，內文連結可點，不進首頁、分類頁與搜尋", async () => {

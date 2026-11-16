@@ -6,7 +6,6 @@
 - `content/pages/*.md`：獨立頁面（例如首頁橫幅連到的 `/new-page/`）。格式和文章相同、檔名就是網址，但不屬於分類，不會出現在首頁、分類頁、搜尋與相關文章。
 - 段落裡的 `[文字](https://…)` 會變成連結（文章與頁面都適用）。
 - `content/media/`：圖片。檔名是文章標題的拼音加序號，例如 `santianzao42yiciwanggong-tuidangzhongxin-gongbu-1.jpg`、`-2.jpg`（匯入程式自動命名，見 `src/importer/media-name.ts`；和別篇撞名時加上日期）。
-- `content/media-aliases.json`：改過檔名的圖片「舊檔名 → 現在的檔名」。產生網站時舊檔名也會發佈一份，已經分享出去的舊圖片網址才不會失效；以後再改圖片檔名時要在這裡補上對應。
 - 只有草稿（`draft: true`）用到的圖片不會發佈到 `/media/`。
 - `content/site.json`：網站名稱、標語、每頁篇數、時區。
 - `src/site/`：產生器（React 只用來在建置時輸出 HTML，瀏覽器端只有搜尋頁的 `search.js`）。
