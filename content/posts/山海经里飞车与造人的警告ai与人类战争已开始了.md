@@ -3,7 +3,7 @@ title: 《山海经》里飞车与造人的警告AI与人类战争已开始了�
 date: 2026-11-15T03:48:00.000Z
 category: 文化
 tags: 
-image: /media/shanhaijing-lifeicheyuzaorendejinggaoaiyurenlei-1.jpg
+image: /media/shanhaijing-lifeicheyuzaorendejinggaoaiyurenlei-1.webp
 caption: 2026年10月25日，在加州洛杉矶的彼得森汽车博物馆，人们正在观看2028年特斯拉Roadster Thrust的原型车。这是一款全电动汽车，配备了SpaceX公司开发的推进器，旨在实现飞行。 （图片来源：Caroline Brehman / AFP via Getty Images）
 source: https://www.secretchina.com/news/gb/2026/11/14/1107461.html
 excerpt: 近日，一段令人瞠目结舌的影片在网络上疯传：特斯拉新一代Roadster跑车在完全无人驾驶的模式下，不仅沿着巨大的弯曲坡道实现“倒挂行驶”，更直接腾空而起，飞跃了一辆庞大的Tesla Semi卡车，甚至在空中完成了一记漂亮的“桶滚翻转”后稳稳……
