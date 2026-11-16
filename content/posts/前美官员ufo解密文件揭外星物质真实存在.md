@@ -3,7 +3,7 @@ title: 前美官员：UFO解密文件揭外星物质真实存在
 date: 2026-05-31T03:55:00.000Z
 category: 最新
 tags: 
-image: /media/20260531-89d921-1.jpg
+image: /media/qianmeiguanyuan-ufojiemiwenjianjiewaixingwuzhi-1.jpg
 caption: 人们一直在探讨外星人及外星文明是否存在。图为科幻电影中外星人的造型。（罗郁棠 ／大纪元）
 source: https://www.epochtimes.com/gb/26/5/30/n14777892.htm
 excerpt: 一位曾调查不明空中现象（UAP）的前五角大楼官员表示，五角大楼新近公布的UFO（不明飞行物）解密文件绝对是一个“信息宝库”，其包含的绝密情报表明，外星物质的存在是“非常真实”的。

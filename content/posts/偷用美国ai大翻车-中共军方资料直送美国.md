@@ -3,7 +3,7 @@ title: 偷用美国AI大翻车 中共军方资料直送美国
 date: 2026-09-13T03:54:00.000Z
 category: 最新
 tags: 
-image: /media/20260913-7ed0ba-1.webp
+image: /media/touyongmeiguoaidafanche-zhonggongjunfangziliao-1.webp
 caption: 图为2026年7月18日，在上海举行的世界人工智能大会（WAIC）上，Kimi K3模型的展位。(Hector Retamal/AFP via Getty Images)
 source: https://www.epochtimes.com/gb/26/9/11/n14847874.htm
 excerpt: 最新报告显示，中共军方人员以为在用中国人工智能（AI）初创公司Moonshot处理监控事务，结果被转包给了美国的Anthropic。

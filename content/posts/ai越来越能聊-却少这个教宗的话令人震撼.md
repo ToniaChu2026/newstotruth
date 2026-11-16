@@ -3,7 +3,7 @@ title: AI越来越能聊 却少这个？教宗的话令人震撼
 date: 2026-10-18T03:48:00.000Z
 category: 感悟
 tags: 
-image: /media/20261018-fbd417-1.jpg
+image: /media/aiyuelaiyuenengliao-queshaozhege-jiaozongdehua-1.jpg
 caption: OpenAI的ChatGPT应用程式。（图片来源:Scott Olson/Getty Images）
 source: https://www.secretchina.com/news/gb/2026/10/18/1105781.html
 excerpt: 作者：章天亮某海外媒体最近发表了一篇很长的调查报导，讲到人工智能公司Anthropic在过去一年邀请几十位来自不同宗教和哲学传统的学者，讨论一个听起来越来越不像科幻小说的问题：Claude这样的人工智能，究竟只是一个极其复杂的计算系统，还是……

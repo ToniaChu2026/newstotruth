@@ -3,7 +3,7 @@ title: 前NBA球星：“真善忍”将成为我的座右铭
 date: 2026-05-25T04:49:14.000Z
 category: 感悟
 tags: 
-image: /media/20260525-d30e60-1.jpg
+image: /media/qiannbaqiuxing-zhenshanren-jiangchengweiwodezuo-1.jpg
 caption: 2022年12月18日，前NBA球星、人权活动家埃内斯‧坎特‧自由（Enes Kanter Freedom）在华盛顿。（Jack Wang／英文大纪元）
 source: https://www.epochtimes.com/gb/26/5/18/n14767204.htm
 excerpt: 世界法轮大法日之际，前NBA篮球明星埃内斯‧坎特‧自由（Enes Kanter Freedom）向法轮功学员表达感谢和致意。他表示，他将把法轮功“真、善、忍”价值观视为座右铭。

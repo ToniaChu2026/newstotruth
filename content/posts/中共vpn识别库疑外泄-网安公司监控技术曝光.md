@@ -3,7 +3,7 @@ title: 中共VPN识别库疑外泄 网安公司监控技术曝光
 date: 2026-07-19T03:56:00.000Z
 category: 最新
 tags: 
-image: /media/20260719-91ffbc-1.jpg
+image: /media/zhonggongvpnshibiekuyiwaixie-wangangongsijian-1.jpg
 caption: 中国网络安全公司任子行一批固件文件近日疑似外泄。（网页截图）
 source: https://www.epochtimes.com/gb/26/7/13/n14808374.htm
 excerpt: 中国网络安全公司任子行一批固件文件近日疑似外泄。网络安全账号公布的资料显示，相关系统能够识别Clash、V2Ray、ProtonVPN等数十款VPN及代理工具。

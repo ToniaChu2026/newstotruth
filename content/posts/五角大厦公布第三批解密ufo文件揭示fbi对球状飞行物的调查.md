@@ -3,7 +3,7 @@ title: 五角大厦公布第三批解密UFO文件揭示FBI对球状飞行物的�
 date: 2026-06-14T03:55:00.000Z
 category: 最新
 tags: 
-image: /media/20260614-eed71f-1.jpg
+image: /media/wujiaodashagongbudisanpijiemiufowenjianjieshifbi-1.jpg
 source: https://www.renminbao.com/rmb/articles/2026/6/14/95528.html
 excerpt: 美国战争部星期五(6月12日)公布了第三批有关不明异常现象(UAP)的解密文件。
 ---

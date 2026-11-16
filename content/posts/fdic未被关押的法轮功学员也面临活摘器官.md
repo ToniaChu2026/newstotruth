@@ -3,7 +3,7 @@ title: FDIC：未被关押的法轮功学员也面临活摘器官
 date: 2026-06-28T03:55:00.000Z
 category: 聚焦
 tags: 
-image: /media/20260628-3b4dd7-1.jpg
+image: /media/fdic-weibeiguanyadefalungongxueyuanyemianlinhuo-1.jpg
 caption: 2017年2月28日，在马德里拉帕斯医院（La Paz Hospital）， 一名医生正在为患者施行肾移植手术。图为示意图。 (Pierre-Philippe Marcou/AFP via Getty Images)
 source: https://www.epochtimes.com/gb/26/6/21/n14793732.htm
 excerpt: 2026年5月，法轮大法信息中心（FDIC）向美国国会及中国委员会行政当局（CECC）提交的一份报告显示，未被关押的法轮功学员也面临活摘器官的风险。
@@ -55,7 +55,7 @@ excerpt: 2026年5月，法轮大法信息中心（FDIC）向美国国会及中�
 
 ## 美资深国会议员：中共对法轮功实行群体灭绝
 
-![2024年3月20日，美国国会与行政中国委员会（CECC）主席、联邦众议员克里斯·史密斯（Chris Smith，共和党/新泽西州）在华盛顿特区出席了一场关于中共政权强摘器官做法的听证会后面对记者接受采访。（York Du /大纪元时报）](/media/20260628-3b4dd7-2.webp)
+![2024年3月20日，美国国会与行政中国委员会（CECC）主席、联邦众议员克里斯·史密斯（Chris Smith，共和党/新泽西州）在华盛顿特区出席了一场关于中共政权强摘器官做法的听证会后面对记者接受采访。（York Du /大纪元时报）](/media/fdic-weibeiguanyadefalungongxueyuanyemianlinhuo-2.webp)
 
 2024年3月20日，美国国会与行政中国委员会（CECC）主席、联邦众议员克里斯·史密斯（Chris Smith，共和党/新泽西州）在华盛顿特区出席了一场关于中共政权强摘器官做法的听证会后面对记者接受采访。（York Du /大纪元时报）
 

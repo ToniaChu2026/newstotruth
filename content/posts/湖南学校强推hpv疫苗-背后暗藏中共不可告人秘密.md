@@ -3,7 +3,7 @@ title: 湖南学校强推HPV疫苗 背后暗藏中共不可告人秘密
 date: 2026-06-21T03:57:00.000Z
 category: 最新
 tags: 
-image: /media/20260621-eb2468-1.jpg
+image: /media/hunanxuexiaoqiangtuihpvyimiao-beihouancangzhong-1.jpg
 caption: 2021年3月30日，在山东省青岛市的一所大学内，医务人员正在为学生注射疫苗。（图片来源：STR/AFP via Getty Images）
 source: https://www.secretchina.com/news/gb/2026/06/18/1100739.html
 excerpt: 6月16日，湖南某学校组织HPV疫苗接种家长动员会。（图片来源：网络图片）

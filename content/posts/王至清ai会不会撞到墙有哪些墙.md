@@ -3,7 +3,7 @@ title: 王至清：AI会不会撞到墙？有哪些墙？
 date: 2026-06-21T03:47:00.000Z
 category: 述评
 tags: 
-image: /media/20260621-8c757e-1.jpg
+image: /media/wangzhiqing-aihuibuhuizhuangdaoqiang-younaxie-1.jpg
 caption: 手机萤幕上显示的人工智能标志。（Oleksii Pydsosonnii／英文大纪元）
 source: https://www.epochtimes.com/gb/26/6/15/n14789248.htm
 excerpt: 马斯克SpaceX（太空探索技术公司）于2026年6月12日在美国纳斯达克交易所正式挂牌上市，创下了全球资本市场IPO募集资金的最高历史纪录。AI界在狂欢。AI仿佛是一列没有刹车的火车，只会越来越快，直到把我们所有人甩下车去。

@@ -3,7 +3,7 @@ title: 说说传统价值在现代科学和AI时代的意义
 date: 2025-12-26T03:42:30.000Z
 category: 文化
 tags: 
-image: /media/20251226-14d134-1.jpg
+image: /media/shuoshuochuantongjiazhizaixiandaikexueheaishidai-1.jpg
 caption: 人工智慧（AI）示意图
 source: https://www.minghui.org/mh/articles/2025/7/25/说说传统价值在现代科学和AI时代的意义（1）-497570.html
 excerpt: 当我们谈论中国传统文化时，有时会听到这样的疑问：“我们都生活在人工智能AI时代了，这些古代的东西和现代科学能联系的上吗？”

@@ -3,7 +3,7 @@ title: 健康博主实测DeepSeek：科学数据竟是自编的
 date: 2026-08-23T03:57:00.000Z
 category: 最新
 tags: 
-image: /media/20260823-f5225d-1.jpg
+image: /media/jiankangbozhushicedeepseek-kexueshujujingshizi-1.jpg
 caption: 图为DeepSeek的资料照。（宋碧龙／大纪元）
 source: https://www.epochtimes.com/gb/26/8/21/n14834332.htm
 excerpt: 正值中国人工智能新创公司“深度求索”（DeepSeek）展开第二轮融资之际，一段有关DeepSeek论文造假的视频引发网络关注。

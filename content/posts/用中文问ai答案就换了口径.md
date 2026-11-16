@@ -3,7 +3,7 @@ title: 用中文问AI答案就换了口径
 date: 2026-09-27T03:46:00.000Z
 category: 最新
 tags: 
-image: /media/20260927-fd03b5-1.jpg
+image: /media/yongzhongwenwenaidaanjiuhuanlekoujing-1.jpg
 caption: 加拿大规模最大的人工智能和技术大会“ALL IN”（图片来源：ANDREJ IVANOV / AFP via Getty Images)
 source: https://www.secretchina.com/news/gb/2026/09/26/1105292.html
 excerpt: 问新冠病毒从哪里来，ChatGPT、Gemini和Grok用英文回答时，会介绍武汉活体动物市场跨物种传播这个科学界最主流的说法，也会提到美国联邦调查局报告所说的武汉病毒研究所实验室泄漏的可能。

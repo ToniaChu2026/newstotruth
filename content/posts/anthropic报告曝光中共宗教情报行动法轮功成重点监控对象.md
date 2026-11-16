@@ -3,7 +3,7 @@ title: Anthropic报告曝光中共宗教情报行动法轮功成重点监控对�
 date: 2026-09-13T03:53:00.000Z
 category: 聚焦
 tags: 
-image: /media/20260913-16b632-1.jpg
+image: /media/anthropicbaogaobaoguangzhonggongzongjiaoqingbao-1.jpg
 source: https://www.secretchina.com/news/gb/2026/09/11/1104699.html
 excerpt: Anthropic是一家美国人工智能(AI)公司，成立于2021年。该公司开发了Claude，这是一个大型语言模型系列，并以其在人工智能安全（尤其是可解释性）方面的研究而闻名。
 ---

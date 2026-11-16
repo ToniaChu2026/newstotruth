@@ -3,7 +3,7 @@ title: 实名制是中共为电诈骗你45公斤SIM卡找不到来处
 date: 2026-08-02T03:47:00.000Z
 category: 最新
 tags: 
-image: /media/20260802-98757e-1.jpg
+image: /media/shimingzhishizhonggongweidianzhapianni45gongjin-1.jpg
 caption: 电话卡（图片来源：Pixel-Shot/Adobe stock)
 source: https://www.secretchina.com/news/gb/2026/07/29/1102798.html
 excerpt: 近日，中国安徽省亳州警方宣布破获一起特大电信网络诈骗案，现场缴获的电诈工具令人咋舌：40多万张SIM卡，总重高达45公斤。
