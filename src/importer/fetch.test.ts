@@ -29,12 +29,36 @@ describe("來源網頁解析", () => {
         url: "https://publisher.example.com/hero.jpg",
         altText: "Hero",
         index: 0,
+        caption: null,
       },
       {
         url: "https://cdn.example.com/inline.webp",
         altText: "Inline",
         index: 1,
+        caption: null,
       },
+    ]);
+  });
+
+  it("依原文 HTML 結構判斷圖說：figcaption、caption 類別、同一段 <br> 後的文字", () => {
+    const html = [
+      '<figure><img src="/a.jpg" width="600"><figcaption>甲图说明。（来源）</figcaption></figure>',
+      '<div><img src="/b.jpg" width="600"></div><div class="imageCaption">乙图说明（来源）</div>',
+      '<p style="text-align:center"><img src="/c.jpg" width="600"><br /> 丙图说明。（来源）<span style="display:none">隐藏</span></p>',
+      '<p><img src="/d.jpg" width="600"></p><p>这是正文第一段，不是图说。</p>',
+      '<center><a href="/e.jpg"><img src="/e.jpg" width="600"></a><div style="color:darkblue">戊图说明。（视频截图）</div></center>',
+      '<p><img src="/f.jpg" width="600">图片和正文在同一段里，没有换行，不是图说。</p>',
+    ].join("");
+    const captions = extractImages(html, "https://publisher.example.com/s", 10).map(
+      image => image.caption
+    );
+    expect(captions).toEqual([
+      "甲图说明。（来源）",
+      "乙图说明（来源）",
+      "丙图说明。（来源）",
+      null,
+      "戊图说明。（视频截图）",
+      null,
     ]);
   });
 

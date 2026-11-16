@@ -48,9 +48,12 @@ export type PlacedImage = {
   replaces?: number;
 };
 
-/** 像圖說的文字：結尾是出處括號，例如（大纪元AI制图）、(Getty Images)，或開頭是「图1：」。 */
-const CAPTION_LIKE =
-  /([（(][^（）()]{1,60}[）)]\s*[。.]?\s*$)|(^[图圖]\s*\d+(～\d+)?\s*[：:])/;
+/** docx 的這段文字是不是圖說的重複（相同，或是圖說去掉出處後的前段）。 */
+function isCaptionCopy(text: string, caption: string) {
+  const a = lineKey(text, 400);
+  const b = lineKey(caption, 400);
+  return a.length >= 8 && b.startsWith(a);
+}
 
 const MARKER = /\{\{image:(\d+)\}\}/g;
 const HAS_MARKER = /\{\{image:\d+\}\}/;
@@ -68,7 +71,9 @@ export function placeSourceImages(
   article: Pick<DocxArticle, "title" | "blocks">,
   sourceText: string,
   maxImages = 10,
-  imageUrls: string[] = []
+  imageUrls: string[] = [],
+  /** 從原文 HTML 結構判斷出的圖說（null 表示確定沒有；undefined 表示不知道，改用文字推測）。 */
+  imageCaptions: Array<string | null | undefined> = []
 ): PlacedImage[] | null {
   const texts = article.blocks
     .map((block, index) => ({ block, index }))
@@ -137,20 +142,28 @@ export function placeSourceImages(
     let caption: string | null = null;
     let replaces: number | undefined;
     const next = lines[i + 1];
+    const known =
+      markers.length === 1 ? imageCaptions[markers[0]] : undefined;
     const usable =
       next && !HAS_MARKER.test(next) && next.length >= 4 && next.length <= 300;
     const docxMatch = usable
       ? (anchorAt.get(i + 1) ??
         texts.findIndex(item => sameLine(next, item.block.text)))
       : -1;
-    if (usable && docxMatch === -1 && !isText.has(i + 1)) {
+    if (known !== undefined) {
+      // 原文 HTML 已經說明這張圖有沒有圖說，照原文判斷。
+      caption = known;
+      if (caption) {
+        if (next && lineKey(next, 20) === lineKey(caption, 20)) i += 1;
+        // docx 若把圖說也當成一段正文（文字和圖說相同），那段拿掉。
+        const duplicate = texts.findIndex(item =>
+          isCaptionCopy(item.block.text, caption!)
+        );
+        if (duplicate !== -1) replaces = texts[duplicate].index;
+      }
+    } else if (usable && docxMatch === -1 && !isText.has(i + 1)) {
+      // 沒有原文 HTML 的圖說資訊（舊的快取）時，才用「下一行不是正文」來推測。
       caption = next;
-      i += 1;
-    } else if (usable && docxMatch !== -1 && CAPTION_LIKE.test(next)) {
-      // docx 常把圖說也當成一段正文；看起來像圖說（結尾是出處括號或開頭是「图N：」）
-      // 就當圖說，並把 docx 裡那段重複的文字拿掉。
-      caption = next;
-      replaces = texts[docxMatch].index;
       i += 1;
     }
     for (const index of markers) {
@@ -167,6 +180,18 @@ export function placeSourceImages(
         caption: markers.length === 1 ? caption : null,
         ...(replaces !== undefined && markers.length === 1 ? { replaces } : {}),
       });
+    }
+  }
+  // 有些網站把首圖放在標題前面：原文 HTML 確認有圖說的，也當首圖。
+  if (titleFound && !placed.some(image => image.after === -1)) {
+    for (let i = regionStart - 2; i >= Math.max(0, regionStart - 10); i -= 1) {
+      const markers = Array.from(lines[i].matchAll(MARKER), m => Number(m[1]));
+      const caption = markers.length === 1 ? imageCaptions[markers[0]] : null;
+      if (!caption || seen.has(markers[0])) continue;
+      if (imageUrls[markers[0]] && DECORATIVE_IMAGE.test(imageUrls[markers[0]]))
+        continue;
+      placed.unshift({ index: markers[0], after: -1, caption });
+      break;
     }
   }
   // after 目前是 texts 的索引，換成 blocks 的索引。

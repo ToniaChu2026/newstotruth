@@ -141,7 +141,13 @@ async function main() {
     try {
       const source = await fetchCached(article.source, cacheDir);
       const urls = source.images.map(image => sizedImageUrl(image.url));
-      const found = placeSourceImages(article, source.text, 10, urls);
+      const found = placeSourceImages(
+        article,
+        source.text,
+        10,
+        urls,
+        source.images.map(image => image.caption)
+      );
       if (found === null) fetchError = "原文網頁裡找不到對應的正文";
       placed = (found ?? []).map(image => ({
         ...image,

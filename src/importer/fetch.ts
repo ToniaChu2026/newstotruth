@@ -14,7 +14,16 @@ const MAX_IMAGES = 8;
 const USER_AGENT =
   "NewsToTruth-Authorized-Import/1.0 (+authorized-content-only)";
 
-export type ExtractedImage = { url: string; altText: string; index: number };
+export type ExtractedImage = {
+  url: string;
+  altText: string;
+  index: number;
+  /**
+   * 原文網頁 HTML 裡屬於這張圖的圖說（figcaption、caption 類別的元素，
+   * 或和圖片在同一段、用 <br> 隔開的文字）；確定沒有時是 null。
+   */
+  caption?: string | null;
+};
 
 function isPrivateIp(address: string) {
   const normalized = address.toLowerCase();
@@ -173,6 +182,72 @@ function imageSource(tag: string) {
   return raw && !raw.startsWith("data:") ? raw : "";
 }
 
+/** HTML 片段轉成一行文字（拿掉隱藏元素）。 */
+function inlineText(html: string) {
+  return decodeHtml(
+    html
+      .replace(
+        /<(\w+)\b[^>]*style\s*=\s*["'][^"']*display\s*:\s*none[^>]*>[\s\S]*?<\/\1>/gi,
+        " "
+      )
+      .replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+  )
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const CAPTION_CLASS =
+  /<(figcaption|div|p|span|small|em)\b[^>]*class\s*=\s*["'][^"']*caption[^"']*["'][^>]*>([\s\S]*?)<\/\1>/i;
+const BLOCK_END = /<\/(p|td|center|div|li|figure|h[1-6]|table|section|article)\s*>/i;
+
+/**
+ * 依原文網頁的 HTML 結構找圖說：
+ * 1. 同一個 <figure> 裡的 <figcaption>；
+ * 2. 圖片後面（中間沒有其他文字）帶 caption 類別的元素，例如大纪元的 imageCaption；
+ * 3. 緊跟在圖片後面、自成一個元素且外層區塊隨即結束的文字，例如人民报；
+ * 4. 和圖片在同一段（<p>、<td>、<center>…）且用 <br> 隔開的文字，例如看中国、明慧网。
+ * 都不是就回傳 null：圖片後面另起一段的文字是正文，不是圖說。
+ */
+export function captionFromHtml(html: string, imgStart: number, imgEnd: number) {
+  const valid = (text: string) =>
+    text.length >= 2 && text.length <= 300 ? text : null;
+  // 1. figure / figcaption
+  const before = html.slice(0, imgStart);
+  const figureOpen = before.lastIndexOf("<figure");
+  if (figureOpen !== -1 && figureOpen > before.lastIndexOf("</figure")) {
+    const figureClose = html.indexOf("</figure", imgEnd);
+    const inside = html.slice(imgEnd, figureClose === -1 ? imgEnd + 3000 : figureClose);
+    const caption = /<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/i.exec(inside);
+    if (caption) return valid(inlineText(caption[1]));
+  }
+  const nextImg = html.slice(imgEnd).search(/<img\b/i);
+  const after = html.slice(imgEnd, imgEnd + Math.min(nextImg === -1 ? 3000 : nextImg, 3000));
+  // 2. caption 類別的元素，前面沒有其他文字
+  const classed = CAPTION_CLASS.exec(after);
+  if (classed && !inlineText(after.slice(0, classed.index)))
+    return valid(inlineText(classed[2]));
+  // 3. 緊跟在圖片後面、自成一個元素的文字，而且外層的區塊就在它後面結束
+  //    （例如人民报：<center><img><div>圖說</div></center>）
+  const own =
+    /^\s*(?:<\/a>\s*)?(?:<br\s*\/?>\s*)?<(div|span|font|small|em|i|strong|b|p)\b[^>]*>([\s\S]*?)<\/\1>\s*<\/(center|td|figure|p|div|li)>/i.exec(
+      after
+    );
+  if (own && !/<(img|p|div)\b/i.test(own[2])) {
+    const text = inlineText(own[2]);
+    if (text) return valid(text);
+  }
+  // 4. 同一段裡、<br> 之後的文字
+  const blockEnd = after.search(BLOCK_END);
+  const block = blockEnd === -1 ? "" : after.slice(0, blockEnd);
+  const br = block.search(/<br\b/i);
+  if (br !== -1 && !inlineText(block.slice(0, br))) {
+    const text = inlineText(block.slice(br));
+    if (text) return valid(text);
+  }
+  return null;
+}
+
 /** 擷取文章內的圖片候選；略過明顯的裝飾性小圖。 */
 export function extractImages(
   html: string,
@@ -181,15 +256,19 @@ export function extractImages(
 ) {
   const found: ExtractedImage[] = [];
   const seen = new Set<string>();
-  const imageTags = html.match(/<img\b[^>]*>/gi) || [];
+  const imageTags = Array.from(html.matchAll(/<img\b[^>]*>/gi), match => ({
+    tag: match[0],
+    start: match.index,
+    end: match.index + match[0].length,
+  }));
   const ogImage = readMeta(html, "og:image");
   const candidateTags = [
     ...imageTags,
     ...((imageTags.length === 0 &&
-      ogImage && [`<img src="${ogImage}" alt="">`]) ||
+      ogImage && [{ tag: `<img src="${ogImage}" alt="">`, start: -1, end: -1 }]) ||
       []),
   ];
-  for (const tag of candidateTags) {
+  for (const { tag, start, end } of candidateTags) {
     if (found.length >= maxImages) break;
     const raw = imageSource(tag);
     if (!raw) continue;
@@ -203,6 +282,7 @@ export function extractImages(
         url,
         altText: readAttribute(tag, "alt").slice(0, 320),
         index: found.length,
+        caption: start === -1 ? null : captionFromHtml(html, start, end),
       });
     } catch {
       // 忽略格式錯誤的圖片網址，繼續處理文章。
