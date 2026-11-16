@@ -4,11 +4,10 @@ date: 2026-09-13T03:53:00.000Z
 category: 聚焦
 tags: 
 image: /media/anthropicbaogaobaoguangzhonggongzongjiaoqingbao-1.jpg
+caption: Anthropic是一家美国人工智能(AI)公司，成立于2021年。该公司开发了Claude，这是一个大型语言模型系列，并以其在人工智能安全（尤其是可解释性）方面的研究而闻名。（RICCARDO MILANI/Hans Lucas/AFP via Getty Images)
 source: https://www.secretchina.com/news/gb/2026/09/11/1104699.html
 excerpt: Anthropic是一家美国人工智能(AI)公司，成立于2021年。该公司开发了Claude，这是一个大型语言模型系列，并以其在人工智能安全（尤其是可解释性）方面的研究而闻名。
 ---
-
-Anthropic是一家美国人工智能(AI)公司，成立于2021年。该公司开发了Claude，这是一个大型语言模型系列，并以其在人工智能安全（尤其是可解释性）方面的研究而闻名。
 
 【看中国2026年9月11日讯】（看中国记者金言综合报道）9月10日，美国人工智能公司Anthropic发布长达140余页的威胁情报报告《检测与反制人工智能滥用》，披露其捣毁了一项针对天主教、藏传佛教、台湾基督教群体以及法轮功的宗教事务情报行动。在报告涉及的多个监控案例中，法轮功是被系统性、持续性追踪的核心目标之一。
 

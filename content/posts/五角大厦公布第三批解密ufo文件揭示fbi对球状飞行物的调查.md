@@ -4,11 +4,10 @@ date: 2026-06-14T03:55:00.000Z
 category: 最新
 tags: 
 image: /media/wujiaodashagongbudisanpijiemiufowenjianjieshifbi-1.jpg
+caption: 美国战争部网站公布的不明飞行物组图。
 source: https://www.renminbao.com/rmb/articles/2026/6/14/95528.html
 excerpt: 美国战争部星期五(6月12日)公布了第三批有关不明异常现象(UAP)的解密文件。
 ---
-
-美国战争部网站公布的不明飞行物组图。
 
 【人民报消息】美国战争部星期五(6月12日)公布了第三批有关不明异常现象(UAP)的解密文件。
 
