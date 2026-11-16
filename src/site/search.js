@@ -1,4 +1,6 @@
-// 搜尋頁：載入文章索引，在瀏覽器裡篩選。卡片樣式與 components.tsx 的 PostCard 一致。
+// 搜尋頁：在瀏覽器裡篩選文章。卡片樣式與 components.tsx 的 PostCard 一致。
+// 分兩段載入：先載入小的 search-index.json（標題、摘要、標籤），馬上列出結果；
+// 再載入大的 search-text.json（正文），補上只在正文裡出現關鍵詞的文章。
 (function () {
   var results = document.getElementById("search-results");
   var status = document.getElementById("search-status");
@@ -34,9 +36,13 @@
         "img",
         "w-full transition-transform duration-500 group-hover:scale-[1.03]"
       );
-      img.src = post.image.charAt(0) === "/" ? base + post.image : post.image;
+      if (post.size) {
+        img.width = post.size[0];
+        img.height = post.size[1];
+      }
       img.alt = "";
       img.loading = "lazy";
+      img.src = post.image.charAt(0) === "/" ? base + post.image : post.image;
       wrap.appendChild(img);
       article.appendChild(wrap);
     } else {
@@ -69,29 +75,59 @@
     article.appendChild(body);
     return article;
   }
-
-  status.textContent = "搜索中…";
-  fetch(base + "/search-index.json")
-    .then(function (response) {
+  function load(file) {
+    return fetch(base + file).then(function (response) {
       if (!response.ok) throw new Error(String(response.status));
       return response.json();
-    })
+    });
+  }
+  function report(count, searching) {
+    status.textContent = count
+      ? "“" + query + "” " + (searching ? "已找到 " : "共找到 ") + count +
+        " 篇文章" + (searching ? "，正在搜索正文…" : "")
+      : searching
+        ? "搜索中…"
+        : "没有找到与 “" + query + "” 相关的文章。";
+  }
+
+  var needle = query.toLowerCase();
+  status.textContent = "搜索中…";
+  load("/search-index.json")
     .then(function (posts) {
-      var needle = query.toLowerCase();
-      var found = posts.filter(function (post) {
+      // 第一段：標題、摘要、標籤。
+      var shown = posts.map(function (post) {
         return (
           post.title.toLowerCase().indexOf(needle) !== -1 ||
           post.excerpt.toLowerCase().indexOf(needle) !== -1 ||
-          post.tags.join(" ").toLowerCase().indexOf(needle) !== -1 ||
-          post.text.toLowerCase().indexOf(needle) !== -1
+          post.tags.join(" ").toLowerCase().indexOf(needle) !== -1
         );
       });
-      status.textContent = found.length
-        ? "“" + query + "” 共找到 " + found.length + " 篇文章"
-        : "没有找到与 “" + query + "” 相关的文章。";
-      found.forEach(function (post) {
+      var count = 0;
+      posts.forEach(function (post, index) {
+        if (!shown[index]) return;
+        count += 1;
         results.appendChild(card(post));
       });
+      report(count, true);
+      // 第二段：正文。只補上還沒列出的文章。
+      return load("/search-text.json").then(
+        function (texts) {
+          posts.forEach(function (post, index) {
+            if (shown[index]) return;
+            if ((texts[index] || "").toLowerCase().indexOf(needle) === -1)
+              return;
+            count += 1;
+            results.appendChild(card(post));
+          });
+          report(count, false);
+        },
+        function () {
+          // 正文索引載入失敗時，保留已經列出的結果。
+          status.textContent = count
+            ? "“" + query + "” 找到 " + count + " 篇文章（正文搜索暂时无法使用）"
+            : "搜索索引加载失败，请稍后再试。";
+        }
+      );
     })
     .catch(function () {
       status.textContent = "搜索索引加载失败，请稍后再试。";

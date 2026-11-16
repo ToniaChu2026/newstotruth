@@ -12,6 +12,8 @@ export type Site = {
   recent: Post[];
   cssFile: string;
   searchFile: string;
+  /** 本站圖片（/media/…）的像素寬高；寫進 <img> 讓瀏覽器先留好位置。 */
+  sizes: Map<string, { width: number; height: number }>;
 };
 
 export type PageMeta = {
@@ -34,6 +36,11 @@ export function href(site: Site, path: string) {
 /** 圖片網址：本站媒體加上前綴，外部 https 圖片原樣使用。 */
 export function media(site: Site, url: string) {
   return url.startsWith("/") ? href(site, url) : url;
+}
+/** <img> 的 width / height 屬性；不知道尺寸的圖（外部圖片）不加。 */
+export function dims(site: Site, url: string | null | undefined) {
+  const size = url ? site.sizes.get(url) : undefined;
+  return size ? { width: size.width, height: size.height } : {};
 }
 /** 文章網址（已編碼，可直接放進連結）：/<slug>/。 */
 export function postPath(post: Pick<Post, "slug">) {
@@ -311,6 +318,7 @@ export function Page({
                     src={media(site, config.logo)}
                     alt={config.name}
                     className="h-14 w-auto lg:h-16"
+                    {...dims(site, config.logo)}
                   />
                 ) : (
                   <>
@@ -380,6 +388,7 @@ export function PostCard({ site, post }: { site: Site; post: Post }) {
             alt=""
             loading="lazy"
             className="w-full transition-transform duration-500 group-hover:scale-[1.03]"
+            {...dims(site, post.image)}
           />
         </a>
       ) : (
@@ -419,6 +428,7 @@ function Hero({ site, post }: { site: Site; post: Post }) {
               src={media(site, post.image)}
               alt=""
               className="aspect-[16/10] w-full object-cover"
+              {...dims(site, post.image)}
             />
           </a>
         ) : null}
@@ -447,11 +457,15 @@ function Hero({ site, post }: { site: Site; post: Post }) {
 function Banner({ site }: { site: Site }) {
   const hero = site.config.hero;
   if (!hero?.image) return null;
+  // 最寬 760px，但不超過原圖的寬度：放大超過原圖只會變模糊。
+  const natural = site.sizes.get(hero.image)?.width;
   const image = (
     <img
       src={media(site, hero.image)}
       alt={hero.alt ?? ""}
-      className="mx-auto w-full max-w-[760px]"
+      className="mx-auto w-full"
+      style={{ maxWidth: `${Math.min(760, natural ?? 760)}px` }}
+      {...dims(site, hero.image)}
     />
   );
   return (
@@ -566,6 +580,7 @@ function CategoryRow({ site, post }: { site: Site; post: Post }) {
             alt=""
             loading="lazy"
             className="aspect-[16/10] w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            {...dims(site, post.image)}
           />
         </a>
       ) : null}
@@ -687,6 +702,8 @@ export function CategoryPage({
                           src={media(site, post.image)}
                           alt=""
                           loading="lazy"
+                          width={56}
+                          height={56}
                           className="h-14 w-14 shrink-0 bg-stone-100 object-cover"
                         />
                       ) : null}
@@ -766,7 +783,12 @@ function PostBody({ site, blocks }: { site: Site; blocks: Post["blocks"] }) {
           <h2 key={index}>{block.text}</h2>
         ) : (
           <figure key={index}>
-            <img src={media(site, block.url)} alt={block.alt} loading="lazy" />
+            <img
+              src={media(site, block.url)}
+              alt={block.alt}
+              loading="lazy"
+              {...dims(site, block.url)}
+            />
             {block.caption ? <figcaption>{block.caption}</figcaption> : null}
           </figure>
         )
@@ -796,6 +818,7 @@ export function StaticPage({ site, page }: { site: Site; page: Post }) {
               src={media(site, page.image)}
               alt={page.caption ?? ""}
               className="mx-auto max-w-full"
+              {...dims(site, page.image)}
             />
             {page.caption ? (
               <figcaption className="mt-2.5 text-center text-[14px] leading-7 text-stone-500">
@@ -834,6 +857,7 @@ export function ArticlePage({
               src={media(site, post.image)}
               alt={post.caption ?? ""}
               className="w-full bg-stone-100"
+              {...dims(site, post.image)}
             />
             {post.caption ? (
               <figcaption className="mt-2.5 text-[14px] leading-7 text-stone-500">

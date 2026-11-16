@@ -34,6 +34,7 @@ const RESERVED_SLUGS = new Set([
   "feed.xml",
   "robots.txt",
   "search-index.json",
+  "search-text.json",
 ]);
 const BAD_SLUG_CHAR = /[\/\\?#%\s"'<>&]/;
 

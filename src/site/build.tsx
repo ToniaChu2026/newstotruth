@@ -7,6 +7,7 @@ import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { build as viteBuild } from "vite";
 import { CATEGORIES, contentDir, loadSiteConfig } from "../config";
+import { imageSize } from "./image-size";
 import { loadPages, loadPosts, mediaDir, type Post } from "../content";
 import {
   ArticlePage,
@@ -102,6 +103,14 @@ export async function buildSite(options: BuildOptions = {}) {
   const searchFile = hashed("search.js", searchJs);
   fs.writeFileSync(path.join(outDir, searchFile), searchJs);
 
+  // 本站圖片的像素寬高，寫進 <img> 的 width / height。
+  const sizes: Site["sizes"] = new Map();
+  if (fs.existsSync(mediaDir(content)))
+    for (const name of fs.readdirSync(mediaDir(content))) {
+      const size = imageSize(path.join(mediaDir(content), name));
+      if (size) sizes.set(`/media/${name}`, size);
+    }
+
   const site: Site = {
     config,
     base,
@@ -109,6 +118,7 @@ export async function buildSite(options: BuildOptions = {}) {
     recent: homePosts.slice(0, 5),
     cssFile,
     searchFile,
+    sizes,
   };
   const written: Array<{ path: string; lastmod?: string }> = [];
   const write = (file: string, meta: PageMeta, body: ReactElement) => {
@@ -264,6 +274,8 @@ export async function buildSite(options: BuildOptions = {}) {
     <NotFoundPage site={site} />
   );
 
+  // 搜尋索引分兩個檔：search-index.json 只有標題、摘要等（小，先載入、先出結果），
+  // search-text.json 是同樣順序的正文（大，之後才載入，用來補上只在正文出現的結果）。
   fs.writeFileSync(
     path.join(outDir, "search-index.json"),
     JSON.stringify(
@@ -274,12 +286,22 @@ export async function buildSite(options: BuildOptions = {}) {
         category: post.category,
         tags: post.tags,
         image: post.image,
+        ...(post.image && sizes.has(post.image)
+          ? { size: [sizes.get(post.image)!.width, sizes.get(post.image)!.height] }
+          : {}),
         dateText: formatDate(site, post.date),
-        text: post.blocks
+      }))
+    )
+  );
+  fs.writeFileSync(
+    path.join(outDir, "search-text.json"),
+    JSON.stringify(
+      posts.map((post: Post) =>
+        post.blocks
           .map(block => (block.type === "img" ? "" : plainText(block.text)))
           .join(" ")
-          .slice(0, 6000),
-      }))
+          .slice(0, 6000)
+      )
     )
   );
 

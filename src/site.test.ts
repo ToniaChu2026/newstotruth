@@ -277,6 +277,11 @@ describe("產生網站", () => {
     const index = JSON.parse(read("search-index.json"));
     expect(index).toHaveLength(1);
     expect(index[0].path).toBe(`/${encoded}/`);
+    // 正文另外放在 search-text.json，順序和索引相同。
+    expect(index[0].text).toBeUndefined();
+    const texts = JSON.parse(read("search-text.json"));
+    expect(texts).toHaveLength(1);
+    expect(texts[0]).toContain("正文开始");
     expect(read("sitemap.xml")).toContain(
       `https://user.github.io/repo/${encoded}/`
     );
@@ -436,6 +441,45 @@ describe("產生網站", () => {
     expect(feed).toContain(`<link>${origin}/${encodeURIComponent(slug)}/</link>`);
     expect(feed).toContain("<title>没有配图 &lt;的&gt; 文章</title>");
     expect(feed.indexOf("测试文章：标题")).toBeLessThan(feed.indexOf("没有配图"));
+  }, 30_000);
+
+  it("圖片帶上寬高，橫幅不放大超過原圖", async () => {
+    // 1×1 的 PNG 檔頭改成 556×344，後面補到夠大。
+    const png = (width: number, height: number) => {
+      const bytes = Buffer.alloc(9000, 0);
+      Buffer.from("89504e470d0a1a0a0000000d49484452", "hex").copy(bytes);
+      bytes.writeUInt32BE(width, 16);
+      bytes.writeUInt32BE(height, 20);
+      return bytes;
+    };
+    fs.writeFileSync(
+      path.join(dir, "site.json"),
+      JSON.stringify({ hero: { image: "/media/site-hero.png" } })
+    );
+    await addArticle(source, structured, {
+      dir,
+      now,
+      download: async () => ({
+        bytes: png(1200, 800),
+        contentType: "image/png",
+        extension: "png",
+      }),
+    });
+    fs.writeFileSync(path.join(dir, "media/site-hero.png"), png(556, 344));
+    const outDir = path.join(dir, "dist");
+    await buildSite({ contentDir: dir, outDir, basePath: "/" });
+    const read = (file: string) =>
+      fs.readFileSync(path.join(outDir, file), "utf8");
+    const home = read("index.html");
+    expect(home).toMatch(
+      /<img src="\/media\/site-hero\.png"[^>]*style="max-width:556px"[^>]*width="556" height="344"/
+    );
+    expect(home).toMatch(
+      new RegExp(`<img src="/media/${prefix}-1\\.png"[^>]*width="1200" height="800"`)
+    );
+    const article = read(`${slug}/index.html`);
+    expect(article.match(/width="1200" height="800"/g)!.length).toBeGreaterThan(1);
+    expect(JSON.parse(read("search-index.json"))[0].size).toEqual([1200, 800]);
   }, 30_000);
 
   it("草稿的圖片不發佈", async () => {
