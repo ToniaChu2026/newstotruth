@@ -107,8 +107,29 @@ export async function fetchPublicPage(inputUrl: string) {
   throw new Error("文章網址轉址次數過多。");
 }
 
+const NAMED_ENTITIES: Record<string, string> = {
+  middot: "·",
+  hellip: "…",
+  mdash: "—",
+  ndash: "–",
+  ldquo: "“",
+  rdquo: "”",
+  lsquo: "‘",
+  rsquo: "’",
+  bull: "•",
+  times: "×",
+  copy: "©",
+  reg: "®",
+  deg: "°",
+  laquo: "«",
+  raquo: "»",
+};
+
 export function decodeHtml(value: string) {
   return value
+    .replace(/&([a-z]+);/gi, (all, name: string) =>
+      NAMED_ENTITIES[name.toLowerCase()] ?? all
+    )
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&")
     .replace(/&quot;/gi, '"')
@@ -221,8 +242,12 @@ export function captionFromHtml(html: string, imgStart: number, imgEnd: number) 
     const caption = /<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/i.exec(inside);
     if (caption) return valid(inlineText(caption[1]));
   }
-  const nextImg = html.slice(imgEnd).search(/<img\b/i);
-  const after = html.slice(imgEnd, imgEnd + Math.min(nextImg === -1 ? 3000 : nextImg, 3000));
+  // <noscript> 裡通常是同一張圖的備用標籤，不算下一張圖。
+  const rest = html
+    .slice(imgEnd, imgEnd + 4000)
+    .replace(/<noscript\b[\s\S]*?<\/noscript>/gi, "");
+  const nextImg = rest.search(/<img\b/i);
+  const after = rest.slice(0, Math.min(nextImg === -1 ? 3000 : nextImg, 3000));
   // 2. caption 類別的元素，前面沒有其他文字
   const classed = CAPTION_CLASS.exec(after);
   if (classed && !inlineText(after.slice(0, classed.index)))

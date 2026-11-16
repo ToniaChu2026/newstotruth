@@ -48,6 +48,7 @@ describe("來源網頁解析", () => {
       '<p><img src="/d.jpg" width="600"></p><p>这是正文第一段，不是图说。</p>',
       '<center><a href="/e.jpg"><img src="/e.jpg" width="600"></a><div style="color:darkblue">戊图说明。（视频截图）</div></center>',
       '<p><img src="/f.jpg" width="600">图片和正文在同一段里，没有换行，不是图说。</p>',
+      '<div class="featured_image"><a><img data-src="/g.jpg" width="600"><noscript><img src="/g.jpg" width="600"></noscript></a><div class="caption">己图说明。（大纪元）</div></div>',
     ].join("");
     const captions = extractImages(html, "https://publisher.example.com/s", 10).map(
       image => image.caption
@@ -59,6 +60,7 @@ describe("來源網頁解析", () => {
       null,
       "戊图说明。（视频截图）",
       null,
+      "己图说明。（大纪元）",
     ]);
   });
 
