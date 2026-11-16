@@ -1,13 +1,13 @@
 # 新闻聚焦（newstotruth）
 
-靜態新聞網站。文章與圖片都存在這個 repo 的 `content/` 裡；push 到 `main` 後 GitHub Actions 會重新產生網站並部署到 GitHub Pages。沒有伺服器、資料庫或後台。
+靜態新聞網站。文章與圖片都存在這個 repo 的 `content/` 裡；正式網址是 https://news-focus.org（Cloudflare）；push 到 `main` 後網站會重新產生並部署（GitHub Actions 也會部署一份到 GitHub Pages）。沒有伺服器、資料庫或後台。
 
 - `content/posts/*.md`：文章，一篇一檔。**檔名就是文章網址**：`美国女子濒死时回顾一生-看尽自己此生善恶.md` → `/美国女子濒死时回顾一生-看尽自己此生善恶/`，和原本 newstotruth.com 的網址格式一致。開頭 `---` 之間是「欄位: 值」（一行一個，不是完整 YAML；`caption` 是首圖的圖說），之後是正文：段落之間空一行，小標題寫成 `## 文字`，圖片寫成 `![說明](/media/檔名 "圖說")`。
 - `content/pages/*.md`：獨立頁面（例如首頁橫幅連到的 `/new-page/`）。格式和文章相同、檔名就是網址，但不屬於分類，不會出現在首頁、分類頁、搜尋與相關文章。
 - 段落裡的 `[文字](https://…)` 會變成連結（文章與頁面都適用）。
 - `content/media/`：圖片。檔名是文章標題的拼音加序號，例如 `santianzao42yiciwanggong-tuidangzhongxin-gongbu-1.jpg`、`-2.jpg`（匯入程式自動命名，見 `src/importer/media-name.ts`；和別篇撞名時加上日期）。
 - 只有草稿（`draft: true`）用到的圖片不會發佈到 `/media/`。
-- `content/site.json`：網站名稱、標語、每頁篇數、時區。
+- `content/site.json`：網站名稱、正式網址（`url`，canonical、分享預覽、sitemap、RSS 都用它）、標語、每頁篇數、時區。
 - 每一頁的分享預覽（og、twitter card）、結構化資料、`sitemap.xml` 與 RSS（`/feed.xml`，最新 30 篇）都由產生器自動輸出，不需要在文章裡寫。
 - `src/site/`：產生器（React 只用來在建置時輸出 HTML，瀏覽器端只有搜尋頁的 `search.js`）。
 - `src/importer/`：抓取網頁、擷取文字與圖片、寫成文章檔。

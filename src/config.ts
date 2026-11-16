@@ -44,6 +44,8 @@ export type SiteConfig = {
   logo?: string;
   /** 首頁最上方的橫幅圖；設定後首頁不再把最新一篇放大成頭條。 */
   hero?: { image: string; alt?: string; link?: string };
+  /** 網站正式網址，例如 https://news-focus.org；用在 canonical、分享預覽、sitemap 與 RSS。 */
+  url?: string;
   /** Google Tag Manager 容器編號，例如 GTM-P5R8TSN；GA 等追蹤都在 GTM 裡設定。 */
   gtm?: string;
 };
@@ -70,6 +72,10 @@ export function loadSiteConfig(dir = contentDir()): SiteConfig {
     ...DEFAULTS,
     ...raw,
     homePages: Math.max(0, Math.floor(Number(raw.homePages) || 0)),
+    url:
+      raw.url && /^https?:\/\/[^/\s]+(\/\S*)?$/.test(raw.url)
+        ? raw.url.replace(/\/+$/, "")
+        : undefined,
     gtm:
       raw.gtm && /^GTM-[A-Z0-9]+$/.test(raw.gtm) ? raw.gtm : undefined,
     pageSize: Math.max(

@@ -32,7 +32,7 @@ export type BuildOptions = {
   outDir?: string;
   /** 網站掛在子路徑時的前綴，例如 /newstotruth。 */
   basePath?: string;
-  /** 網站完整網址（含子路徑），例如 https://user.github.io/newstotruth。 */
+  /** 網站完整網址（含子路徑），例如 https://news-focus.org；預設取 site.json 的 url。 */
   siteUrl?: string;
 };
 
@@ -83,10 +83,12 @@ export async function buildSite(options: BuildOptions = {}) {
   const base = (options.basePath ?? process.env.BASE_PATH ?? "")
     .trim()
     .replace(/\/+$/, "");
-  const origin = (options.siteUrl ?? process.env.SITE_URL ?? "")
+  const config = loadSiteConfig(content);
+  // 正式網址以 site.json 的 url 為準（GitHub Pages 的副本也指向正式網域），
+  // 沒設定時才用建置環境給的 SITE_URL。
+  const origin = (options.siteUrl ?? config.url ?? process.env.SITE_URL ?? "")
     .trim()
     .replace(/\/+$/, "");
-  const config = loadSiteConfig(content);
   const everything = [...loadPosts(content), ...loadPages(content)];
   const posts = loadPosts(content).filter(post => !post.draft);
   const staticPages = loadPages(content).filter(page => !page.draft);

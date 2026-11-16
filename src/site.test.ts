@@ -532,6 +532,17 @@ describe("產生網站", () => {
     expect(read("category/inspired/index.html")).not.toContain("关于本站");
     expect(JSON.parse(read("search-index.json"))).toHaveLength(1);
     expect(read("sitemap.xml")).toContain("https://user.github.io/repo/about/");
+    // site.json 的 url 是正式網址：掛在子路徑的副本，canonical 與 sitemap 也指向它。
+    fs.writeFileSync(
+      path.join(dir, "site.json"),
+      JSON.stringify({ url: "https://news.example/" })
+    );
+    await buildSite({ contentDir: dir, outDir, basePath: "/repo" });
+    expect(read("sitemap.xml")).toContain("https://news.example/about/");
+    expect(read("about/index.html")).toContain(
+      'rel="canonical" href="https://news.example/about/"'
+    );
+    expect(read("robots.txt")).toContain("https://news.example/sitemap.xml");
     // 文章和頁面不能用同一個網址。
     fs.writeFileSync(
       path.join(dir, `pages/${slug}.md`),
