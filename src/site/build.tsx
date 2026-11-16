@@ -86,6 +86,7 @@ export async function buildSite(options: BuildOptions = {}) {
     .trim()
     .replace(/\/+$/, "");
   const config = loadSiteConfig(content);
+  const everything = [...loadPosts(content), ...loadPages(content)];
   const posts = loadPosts(content).filter(post => !post.draft);
   const staticPages = loadPages(content).filter(page => !page.draft);
   // 首頁與近期文章只放有首圖的文章；沒有配圖的仍在分類頁、搜尋與文章頁。
@@ -267,8 +268,48 @@ export async function buildSite(options: BuildOptions = {}) {
   );
 
   const media = mediaDir(content);
-  if (fs.existsSync(media))
-    fs.cpSync(media, path.join(outDir, "media"), { recursive: true });
+  if (fs.existsSync(media)) {
+    // 只有草稿用到的圖片不發佈：草稿還沒上線，它的圖也不該能用網址打開。
+    const filesOf = (items: Post[]) =>
+      items
+        .flatMap(item => [
+          item.image,
+          ...item.blocks.map(block => (block.type === "img" ? block.url : null)),
+        ])
+        .filter((url): url is string => Boolean(url?.startsWith("/media/")))
+        .map(url => url.slice("/media/".length));
+    const live = new Set([
+      ...filesOf(everything.filter(item => !item.draft)),
+      ...[config.logo, config.hero?.image]
+        .filter((url): url is string => Boolean(url?.startsWith("/media/")))
+        .map(url => url.slice("/media/".length)),
+    ]);
+    const draftOnly = new Set(
+      filesOf(everything.filter(item => item.draft)).filter(
+        file => !live.has(file)
+      )
+    );
+    const outMedia = path.join(outDir, "media");
+    fs.cpSync(media, outMedia, {
+      recursive: true,
+      filter: source => !draftOnly.has(path.basename(source)),
+    });
+    // 改過檔名的圖片：舊檔名也發佈一份，已經分享出去的舊圖片網址才不會失效。
+    const aliasFile = path.join(content, "media-aliases.json");
+    if (fs.existsSync(aliasFile)) {
+      const aliases = JSON.parse(fs.readFileSync(aliasFile, "utf8")) as Record<
+        string,
+        string
+      >;
+      const safe = /^[\w.\-]+$/;
+      for (const [oldName, currentName] of Object.entries(aliases)) {
+        if (!safe.test(oldName) || !safe.test(String(currentName))) continue;
+        const from = path.join(outMedia, currentName);
+        const to = path.join(outMedia, oldName);
+        if (fs.existsSync(from) && !fs.existsSync(to)) fs.copyFileSync(from, to);
+      }
+    }
+  }
 
   if (origin) {
     fs.writeFileSync(
