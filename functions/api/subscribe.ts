@@ -2,7 +2,7 @@
  * Cloudflare Pages Function：POST /api/subscribe
  * 下載表單送來的電子郵件存進 D1 資料庫（Pages 專案設定裡綁定為 DB）的 subscribers 表。
  * 同一個郵件再次提交時只更新 last_seen 與 count。
- * 回應 { ok: true, stored }；郵件格式不對回 400。沒綁定資料庫或寫入失敗時仍回 200，
+ * 回應 { ok: true, stored }（沒存時附 reason，方便檢查設定）；郵件格式不對回 400。沒綁定資料庫或寫入失敗時仍回 200，
  * 讓讀者照樣拿到下載連結（錯誤記在 Cloudflare 的 Functions 記錄裡）。
  */
 
@@ -61,7 +61,7 @@ export async function onRequestPost({
 
   if (!env.DB) {
     console.error("subscribe: D1 binding DB is missing");
-    return json({ ok: true, stored: false });
+    return json({ ok: true, stored: false, reason: "no database binding" });
   }
   try {
     await env.DB.prepare(CREATE).run();
@@ -71,6 +71,6 @@ export async function onRequestPost({
     return json({ ok: true, stored: true });
   } catch (error) {
     console.error("subscribe: D1 write failed", error);
-    return json({ ok: true, stored: false });
+    return json({ ok: true, stored: false, reason: "database error" });
   }
 }

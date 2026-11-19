@@ -69,7 +69,11 @@ describe("下載表單的電子郵件", () => {
       request: post({ email: "a@b.co" }),
       env: {},
     });
-    expect(await noDb.json()).toEqual({ ok: true, stored: false });
+    expect(await noDb.json()).toEqual({
+      ok: true,
+      stored: false,
+      reason: "no database binding",
+    });
 
     const broken: D1Database = {
       prepare: () => ({
@@ -84,6 +88,10 @@ describe("下載表單的電子郵件", () => {
       env: { DB: broken },
     });
     expect(failed.status).toBe(200);
-    expect(await failed.json()).toEqual({ ok: true, stored: false });
+    expect(await failed.json()).toEqual({
+      ok: true,
+      stored: false,
+      reason: "database error",
+    });
   });
 });
