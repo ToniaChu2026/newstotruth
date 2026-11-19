@@ -12,6 +12,8 @@ export type Site = {
   recent: Post[];
   cssFile: string;
   searchFile: string;
+  /** 下載表單的瀏覽器端程式（有 downloads 的頁面才載入）。 */
+  downloadFile: string;
   /** 本站圖片（/media/…）的像素寬高；寫進 <img> 讓瀏覽器先留好位置。 */
   sizes: Map<string, { width: number; height: number }>;
 };
@@ -831,8 +833,98 @@ export function StaticPage({ site, page }: { site: Site; page: Post }) {
           </figure>
         ) : null}
         <PostBody site={site} blocks={page.blocks} />
+        {page.downloads?.length ? (
+          <DownloadForm site={site} files={page.downloads} />
+        ) : null}
       </article>
     </>
+  );
+}
+
+/**
+ * 下載表單：訪客留下電子郵件後才顯示下載連結。
+ * download.js 把郵件送到 /api/subscribe（Cloudflare Pages Function，存進 D1），
+ * 不論是否存成功都顯示連結，讓讀者拿得到檔案。
+ */
+function DownloadForm({ site, files }: { site: Site; files: string[] }) {
+  return (
+    <section
+      id="download"
+      className="mt-10 border border-[var(--brand)]/30 bg-[var(--brand-wash)] px-5 py-7 sm:px-8"
+    >
+      <h2 className="text-[20px] font-medium text-stone-800">
+        下载全文（PDF）
+      </h2>
+      <form
+        id="download-form"
+        method="post"
+        action={href(site, "/api/subscribe")}
+        className="mt-4"
+        noValidate
+      >
+        <p className="text-[15px] leading-7 text-stone-600">
+          请留下您的电子邮箱，提交后即可下载。
+        </p>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <input
+            type="email"
+            name="email"
+            required
+            autoComplete="email"
+            maxLength={254}
+            placeholder="您的电子邮箱"
+            aria-label="电子邮箱"
+            className="h-11 min-w-0 flex-1 border border-stone-300 bg-white px-4 text-base"
+          />
+          <button
+            type="submit"
+            className="h-11 shrink-0 bg-stone-900 px-6 text-sm text-white hover:bg-[var(--brand)] disabled:opacity-60"
+          >
+            获取下载链接
+          </button>
+        </div>
+        {/* 防止機器人：真人看不到這一欄，填了就當成垃圾提交。 */}
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="absolute -left-[9999px] h-px w-px opacity-0"
+        />
+        <p
+          id="download-error"
+          role="alert"
+          className="mt-2 min-h-5 text-sm text-red-700"
+        />
+        <p className="text-xs leading-6 text-stone-400">您的邮箱不会公开。</p>
+      </form>
+      <div id="download-links" hidden>
+        <p className="mt-4 text-[15px] leading-7 text-stone-600">
+          谢谢！请点击下载：
+        </p>
+        <ul className="mt-3 space-y-2">
+          {files.map(name => (
+            <li key={name}>
+              <a
+                href={href(site, `/downloads/${encodeURIComponent(name)}`)}
+                download={name}
+                className="inline-flex items-center gap-2 text-[16px] text-[var(--brand)] hover:underline"
+              >
+                <Icon d={ICONS.arrow} className="h-4 w-4 rotate-90" />
+                《{name.replace(/\.[a-z0-9]+$/i, "")}》
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <noscript>
+        <p className="mt-3 text-sm text-stone-500">
+          下载需要启用 JavaScript。
+        </p>
+      </noscript>
+      <script src={href(site, site.downloadFile)} defer />
+    </section>
   );
 }
 

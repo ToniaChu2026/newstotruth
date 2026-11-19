@@ -5,6 +5,7 @@
 - `content/posts/*.md`：文章，一篇一檔。**檔名就是文章網址**：`美国女子濒死时回顾一生-看尽自己此生善恶.md` → `/美国女子濒死时回顾一生-看尽自己此生善恶/`，和原本 newstotruth.com 的網址格式一致。開頭 `---` 之間是「欄位: 值」（一行一個，不是完整 YAML；`caption` 是首圖的圖說），之後是正文：段落之間空一行，小標題寫成 `## 文字`，圖片寫成 `![說明](/media/檔名 "圖說")`。
 - `content/pages/*.md`：獨立頁面（例如首頁橫幅連到的 `/new-page/`）。格式和文章相同、檔名就是網址，但不屬於分類，不會出現在首頁、分類頁、搜尋與相關文章。
 - 段落裡的 `[文字](https://…)` 會變成連結（文章與頁面都適用）。
+- 頁面的下載檔案放在 `content/downloads/`，頁面開頭寫 `downloads: 甲.pdf、乙.pdf`：訪客留下電子郵件後才顯示連結。郵件由 `functions/api/subscribe.ts`（Cloudflare Pages Function）存進 D1（綁定名稱 `DB`，設定見 README）。
 - `content/media/`：圖片。檔名是文章標題的拼音加序號，例如 `santianzao42yiciwanggong-tuidangzhongxin-gongbu-1.jpg`、`-2.jpg`（匯入程式自動命名，見 `src/importer/media-name.ts`；和別篇撞名時加上日期）。
 - 只有草稿（`draft: true`）用到的圖片不會發佈到 `/media/`。
 - `content/site.json`：網站名稱、正式網址（`url`，canonical、分享預覽、sitemap、RSS 都用它）、標語、每頁篇數、時區。

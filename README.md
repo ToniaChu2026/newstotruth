@@ -104,6 +104,24 @@ corepack pnpm -s exec tsx scripts/xwzk/import.ts /tmp/xwzk categories.json
 corepack pnpm article auto "https://example.com/article"
 ```
 
+## 下載表單與電子郵件名單
+
+獨立頁面可以提供檔案下載：檔案放在 `content/downloads/`，頁面開頭加一行 `downloads: 甲.pdf、乙.pdf`。頁面下方會出現表單，訪客留下電子郵件後才顯示下載連結（例如 `/new-page/`）。
+
+郵件由 `functions/api/subscribe.ts`（Cloudflare Pages Function）存進 Cloudflare D1 資料庫。第一次要在 Cloudflare 設定（只做一次）：
+
+1. **Storage & Databases → D1 → Create**，名稱例如 `news-focus-subscribers`。
+2. **Workers & Pages →（這個網站的 Pages 專案）→ Settings → Bindings → Add → D1 database**，Variable name 填 `DB`，選剛建立的資料庫。Production 與 Preview 都要加。
+3. 重新部署一次（推一個新 commit，或在 Deployments 裡 Retry）。
+
+資料表 `subscribers` 會在第一封郵件寄來時自動建立。查看名單：在 D1 資料庫的 **Console** 執行
+
+```sql
+SELECT email, first_seen, last_seen, count FROM subscribers ORDER BY first_seen DESC;
+```
+
+還沒綁定資料庫時，表單照樣顯示下載連結，但郵件不會存下來。GitHub Pages 那份副本沒有這個功能，也一樣直接顯示連結。
+
 ## 行為說明
 
 - 只抓取公開網站的 http/https 網址，封鎖內網與本機位址。

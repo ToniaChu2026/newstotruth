@@ -21,6 +21,7 @@ const TYPES: Record<string, string> = {
   ".webp": "image/webp",
   ".avif": "image/avif",
   ".svg": "image/svg+xml",
+  ".pdf": "application/pdf",
 };
 
 const { outDir, posts } = await buildSite();
@@ -34,6 +35,12 @@ http
     );
     if (base && pathname.startsWith(base))
       pathname = pathname.slice(base.length);
+    // 正式網站由 Cloudflare Pages Function 存電子郵件；本機只假裝收到。
+    if (req.method === "POST" && pathname === "/api/subscribe") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: true, stored: false, dev: true }));
+      return;
+    }
     let file = path.join(outDir, path.normalize(pathname));
     if (!file.startsWith(outDir)) file = path.join(outDir, "404.html");
     if (fs.existsSync(file) && fs.statSync(file).isDirectory())

@@ -552,6 +552,30 @@ describe("產生網站", () => {
       "網址相同"
     );
   }, 30_000);
+  it("頁面的下載檔案：留下電子郵件才顯示連結，檔案發佈到 /downloads/", async () => {
+    fs.mkdirSync(path.join(dir, "pages"));
+    fs.mkdirSync(path.join(dir, "downloads"));
+    fs.writeFileSync(path.join(dir, "downloads/甲文.pdf"), "%PDF-1.4");
+    fs.writeFileSync(path.join(dir, "downloads/未用.pdf"), "%PDF-1.4");
+    fs.writeFileSync(
+      path.join(dir, "pages/get.md"),
+      "---\ntitle: 下载\ndate: 2026-01-01T00:00:00.000Z\ndownloads: 甲文.pdf\n---\n\n说明。\n"
+    );
+    const outDir = path.join(dir, "dist");
+    await buildSite({ contentDir: dir, outDir, basePath: "/repo" });
+    const page = fs.readFileSync(path.join(outDir, "get/index.html"), "utf8");
+    expect(page).toContain('action="/repo/api/subscribe"');
+    expect(page).toMatch(/<div id="download-links" hidden="">[\s\S]*href="\/repo\/downloads\/%E7%94%B2%E6%96%87\.pdf"/);
+    expect(page).toMatch(/src="\/repo\/assets\/download\.[0-9a-f]+\.js"/);
+    expect(fs.existsSync(path.join(outDir, "downloads/甲文.pdf"))).toBe(true);
+    expect(fs.existsSync(path.join(outDir, "downloads/未用.pdf"))).toBe(false);
+    expect(fs.readFileSync(path.join(outDir, "index.html"), "utf8")).not.toContain("download.");
+    fs.writeFileSync(
+      path.join(dir, "pages/get.md"),
+      "---\ntitle: 下载\ndate: 2026-01-01T00:00:00.000Z\ndownloads: 缺少.pdf\n---\n\n说明。\n"
+    );
+    await expect(buildSite({ contentDir: dir, outDir })).rejects.toThrow("缺少.pdf");
+  });
 });
 
 describe("搬移 WordPress 文章", () => {

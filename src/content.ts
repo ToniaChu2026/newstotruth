@@ -18,6 +18,8 @@ export type Post = {
   caption: string | null;
   source: string | null;
   draft: boolean;
+  /** 頁面提供下載的檔案（content/downloads/ 裡的檔名）；訪客留下電子郵件後才顯示連結。 */
+  downloads?: string[];
   blocks: SiteBlock[];
 };
 
@@ -28,6 +30,8 @@ const RESERVED_SLUGS = new Set([
   "page",
   "media",
   "assets",
+  "api",
+  "downloads",
   "post",
   "404.html",
   "sitemap.xml",
@@ -88,6 +92,7 @@ const FIELD_ORDER = [
   "source",
   "excerpt",
   "draft",
+  "downloads",
 ] as const;
 
 function oneLine(value: string) {
@@ -114,6 +119,10 @@ export function parsePost(slug: string, text: string): Post {
   if (Number.isNaN(date.getTime()))
     throw new Error(`${slug}.md 的 date 不是正確的日期。`);
   const category = fields.get("category") ?? "";
+  const downloads = (fields.get("downloads") ?? "")
+    .split(/[、,，]/)
+    .map(name => name.trim())
+    .filter(Boolean);
   return {
     slug,
     title,
@@ -128,6 +137,7 @@ export function parsePost(slug: string, text: string): Post {
     caption: fields.get("caption") || null,
     source: fields.get("source") || null,
     draft: fields.get("draft") === "true",
+    ...(downloads.length ? { downloads } : {}),
     blocks: editableToBlocks(match[2]),
   };
 }
@@ -143,6 +153,7 @@ export function serializePost(post: Omit<Post, "slug">) {
     source: post.source ?? "",
     excerpt: oneLine(post.excerpt),
     draft: post.draft ? "true" : "",
+    downloads: (post.downloads ?? []).join("、"),
   };
   const lines = FIELD_ORDER.filter(
     key => values[key] || key === "tags" || key === "excerpt"
@@ -155,6 +166,9 @@ export function postsDir(dir = contentDir()) {
 }
 export function mediaDir(dir = contentDir()) {
   return path.join(dir, "media");
+}
+export function downloadsDir(dir = contentDir()) {
+  return path.join(dir, "downloads");
 }
 export function pagesDir(dir = contentDir()) {
   return path.join(dir, "pages");

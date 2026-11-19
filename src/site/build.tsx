@@ -8,7 +8,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { build as viteBuild } from "vite";
 import { CATEGORIES, contentDir, loadSiteConfig } from "../config";
 import { imageSize } from "./image-size";
-import { loadPages, loadPosts, mediaDir, type Post } from "../content";
+import {
+  downloadsDir,
+  loadPages,
+  loadPosts,
+  mediaDir,
+  type Post,
+} from "../content";
 import {
   ArticlePage,
   formatDate,
@@ -104,6 +110,19 @@ export async function buildSite(options: BuildOptions = {}) {
   const searchJs = fs.readFileSync(path.join(here, "search.js"));
   const searchFile = hashed("search.js", searchJs);
   fs.writeFileSync(path.join(outDir, searchFile), searchJs);
+  const downloadJs = fs.readFileSync(path.join(here, "download.js"));
+  const downloadFile = hashed("download.js", downloadJs);
+  fs.writeFileSync(path.join(outDir, downloadFile), downloadJs);
+
+  // 頁面提供下載的檔案（content/downloads/），只複製上線頁面用到的。
+  const downloads = new Set(staticPages.flatMap(page => page.downloads ?? []));
+  for (const name of downloads) {
+    const file = path.join(downloadsDir(content), name);
+    if (path.basename(name) !== name || !fs.existsSync(file))
+      throw new Error(`content/downloads/ 裡找不到 ${name}。`);
+    fs.mkdirSync(path.join(outDir, "downloads"), { recursive: true });
+    fs.copyFileSync(file, path.join(outDir, "downloads", name));
+  }
 
   // 本站圖片的像素寬高，寫進 <img> 的 width / height。
   const sizes: Site["sizes"] = new Map();
@@ -120,6 +139,7 @@ export async function buildSite(options: BuildOptions = {}) {
     recent: homePosts.slice(0, 5),
     cssFile,
     searchFile,
+    downloadFile,
     sizes,
   };
   const written: Array<{ path: string; lastmod?: string }> = [];
@@ -134,8 +154,7 @@ export async function buildSite(options: BuildOptions = {}) {
         </Page>
       )}`
     );
-    if (!meta.noindex)
-      written.push({ path: meta.path, lastmod: meta.lastmod });
+    if (!meta.noindex) written.push({ path: meta.path, lastmod: meta.lastmod });
   };
   const pagePath = (prefix: string, page: number) =>
     page === 1 ? prefix : `${prefix}page/${page}/`;
@@ -289,7 +308,12 @@ export async function buildSite(options: BuildOptions = {}) {
         tags: post.tags,
         image: post.image,
         ...(post.image && sizes.has(post.image)
-          ? { size: [sizes.get(post.image)!.width, sizes.get(post.image)!.height] }
+          ? {
+              size: [
+                sizes.get(post.image)!.width,
+                sizes.get(post.image)!.height,
+              ],
+            }
           : {}),
         dateText: formatDate(site, post.date),
       }))
@@ -314,7 +338,9 @@ export async function buildSite(options: BuildOptions = {}) {
       items
         .flatMap(item => [
           item.image,
-          ...item.blocks.map(block => (block.type === "img" ? block.url : null)),
+          ...item.blocks.map(block =>
+            block.type === "img" ? block.url : null
+          ),
         ])
         .filter((url): url is string => Boolean(url?.startsWith("/media/")))
         .map(url => url.slice("/media/".length));
