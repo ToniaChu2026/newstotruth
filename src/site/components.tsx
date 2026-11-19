@@ -252,7 +252,10 @@ export function Page({
           <meta property="og:description" content={meta.description} />
         ) : null}
         <meta property="og:site_name" content={config.name} />
-        <meta property="og:type" content={meta.article ? "article" : "website"} />
+        <meta
+          property="og:type"
+          content={meta.article ? "article" : "website"}
+        />
         <meta property="og:locale" content="zh_CN" />
         {canonical ? <meta property="og:url" content={canonical} /> : null}
         {image ? <meta property="og:image" content={image} /> : null}
@@ -543,9 +546,7 @@ export function ListPage({
     <>
       {hero ? null : (
         <h1 className="sr-only">
-          {page === 1
-            ? site.config.name
-            : `${site.config.name} 第 ${page} 页`}
+          {page === 1 ? site.config.name : `${site.config.name} 第 ${page} 页`}
         </h1>
       )}
       {banner ? <Banner site={site} /> : null}
@@ -897,7 +898,9 @@ function DownloadForm({ site, files }: { site: Site; files: string[] }) {
           role="alert"
           className="mt-2 min-h-5 text-sm text-red-700"
         />
-        <p className="text-xs leading-6 text-stone-400">您的邮箱不会公开。</p>
+        <p className="text-xs leading-6 text-stone-500">
+          提交即表示您同意接收本站寄出的电子邮件，可随时退订；您的邮箱不会公开。
+        </p>
       </form>
       <div id="download-links" hidden>
         <p className="mt-4 text-[15px] leading-7 text-stone-600">
@@ -911,17 +914,15 @@ function DownloadForm({ site, files }: { site: Site; files: string[] }) {
                 download={name}
                 className="inline-flex items-center gap-2 text-[16px] text-[var(--brand)] hover:underline"
               >
-                <Icon d={ICONS.arrow} className="h-4 w-4 rotate-90" />
-                《{name.replace(/\.[a-z0-9]+$/i, "")}》
+                <Icon d={ICONS.arrow} className="h-4 w-4 rotate-90" />《
+                {name.replace(/\.[a-z0-9]+$/i, "")}》
               </a>
             </li>
           ))}
         </ul>
       </div>
       <noscript>
-        <p className="mt-3 text-sm text-stone-500">
-          下载需要启用 JavaScript。
-        </p>
+        <p className="mt-3 text-sm text-stone-500">下载需要启用 JavaScript。</p>
       </noscript>
       <script src={href(site, site.downloadFile)} defer />
     </section>
