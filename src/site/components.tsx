@@ -566,15 +566,18 @@ export function ListPage({
   );
 }
 
-/** 分類頁的一列：左圖右文（沒有首圖時整列是文字），仿原網站的分類列表。 */
+/** 分類頁的一列：左文右圖（手機上圖在上面；沒有首圖時整列是文字）。 */
 function CategoryRow({ site, post }: { site: Site; post: Post }) {
   const link = href(site, postPath(post));
   return (
     <article
-      className={`group grid gap-5 border-b border-stone-200 pb-8 ${post.image ? "sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-7" : ""}`}
+      className={`group grid gap-5 border-b border-stone-200 pb-8 ${post.image ? "sm:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] sm:gap-7" : ""}`}
     >
       {post.image ? (
-        <a href={link} className="block overflow-hidden bg-stone-100">
+        <a
+          href={link}
+          className="block self-start overflow-hidden bg-stone-100 sm:order-last"
+        >
           <img
             src={media(site, post.image)}
             alt=""
@@ -618,7 +621,7 @@ function SidebarHeading({ children }: { children: ReactNode }) {
   );
 }
 
-/** 分類頁：標題列加麵包屑，左邊是左圖右文的列表，右邊是搜尋、近期文章與栏目。 */
+/** 分類頁：標題列加麵包屑，左邊是左文右圖的列表，右邊是搜尋、近期文章與栏目。 */
 export function CategoryPage({
   site,
   name,
