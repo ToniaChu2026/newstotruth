@@ -587,10 +587,13 @@ describe("產生網站", () => {
       "網址相同"
     );
   }, 30_000);
-  it("只讓百度收錄：Google、Bing 每頁標 noindex，robots.txt 擋其他搜尋引擎", async () => {
+  it("只讓百度與 Yandex 收錄：Google、Bing 每頁標 noindex，robots.txt 擋其他搜尋引擎", async () => {
     fs.writeFileSync(
       path.join(dir, "site.json"),
-      JSON.stringify({ url: "https://news.example", searchIndex: "baidu-only" })
+      JSON.stringify({
+        url: "https://news.example",
+        searchEngines: ["baidu", "yandex"],
+      })
     );
     const outDir = path.join(dir, "dist");
     await buildSite({ contentDir: dir, outDir });
@@ -606,6 +609,8 @@ describe("產生網站", () => {
     expect(home).not.toContain('name="robots"');
     const robots = read("robots.txt");
     expect(robots).toMatch(/User-agent: Baiduspider\nAllow: \//);
+    expect(robots).toMatch(/User-agent: Yandex\nAllow: \//);
+    expect(robots).toMatch(/User-agent: Googlebot\nAllow: \//);
     expect(robots).toMatch(/User-agent: \*\nDisallow: \//);
     expect(read("_headers")).toContain("X-Robots-Tag: googlebot: noindex");
 

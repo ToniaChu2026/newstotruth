@@ -6,7 +6,13 @@ import { fileURLToPath } from "node:url";
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { build as viteBuild } from "vite";
-import { CATEGORIES, contentDir, loadSiteConfig } from "../config";
+import {
+  CATEGORIES,
+  contentDir,
+  loadSiteConfig,
+  mayIndex,
+  SEARCH_ENGINE_AGENTS,
+} from "../config";
 import { imageSize } from "./image-size";
 import {
   downloadsDir,
@@ -397,17 +403,23 @@ export async function buildSite(options: BuildOptions = {}) {
           .join("") +
         `</channel>\n</rss>\n`
     );
-    // 只讓百度收錄時：百度照常抓取；Google、Bing 允許抓取但每頁標 noindex
+    // 只讓部分搜尋引擎收錄時：清單裡的照常抓取；Google、Bing 也允許抓取但每頁標 noindex
     //（被 robots.txt 擋住的網址仍可能只憑外部連結出現在結果裡），其他搜尋引擎一律擋掉。
+    const agents = config.searchEngines
+      ? [...new Set([...config.searchEngines, "google", "bing"] as const)].map(
+          engine => SEARCH_ENGINE_AGENTS[engine]
+        )
+      : null;
     fs.writeFileSync(
       path.join(outDir, "robots.txt"),
-      config.searchIndex === "baidu-only"
-        ? `User-agent: Baiduspider\nAllow: /\n\nUser-agent: Googlebot\nAllow: /\n\nUser-agent: Bingbot\nAllow: /\n\nUser-agent: *\nDisallow: /\n\nSitemap: ${origin}/sitemap.xml\n`
+      agents
+        ? agents.map(agent => `User-agent: ${agent}\nAllow: /\n\n`).join("") +
+            `User-agent: *\nDisallow: /\n\nSitemap: ${origin}/sitemap.xml\n`
         : `User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n`
     );
   }
   // PDF、RSS 等不是網頁的檔案沒有 meta 標籤，由 Cloudflare Pages 依 _headers 送出 X-Robots-Tag。
-  if (config.searchIndex === "baidu-only")
+  if (!mayIndex(config, "google"))
     fs.writeFileSync(
       path.join(outDir, "_headers"),
       "/*\n  X-Robots-Tag: googlebot: noindex, nofollow\n"

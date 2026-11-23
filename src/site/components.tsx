@@ -1,5 +1,10 @@
 import type { ReactNode } from "react";
-import { CATEGORIES, categorySlug, type SiteConfig } from "../config";
+import {
+  CATEGORIES,
+  categorySlug,
+  mayIndex,
+  type SiteConfig,
+} from "../config";
 import type { Post } from "../content";
 
 /** 產生頁面時共用的環境：網站設定、網址前綴與近期文章。 */
@@ -246,12 +251,12 @@ export function Page({
           <meta name="description" content={meta.description} />
         ) : null}
         {meta.noindex ? <meta name="robots" content="noindex" /> : null}
-        {site.config.searchIndex === "baidu-only" ? (
-          <>
-            <meta name="googlebot" content="noindex, nofollow" />
-            <meta name="bingbot" content="noindex, nofollow" />
-          </>
-        ) : null}
+        {mayIndex(site.config, "google") ? null : (
+          <meta name="googlebot" content="noindex, nofollow" />
+        )}
+        {mayIndex(site.config, "bing") ? null : (
+          <meta name="bingbot" content="noindex, nofollow" />
+        )}
         {canonical ? <link rel="canonical" href={canonical} /> : null}
         <meta property="og:title" content={meta.title} />
         {meta.description ? (

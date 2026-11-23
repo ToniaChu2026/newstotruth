@@ -31,6 +31,20 @@ export function categorySlug(name: string) {
   return CATEGORIES.find(category => category.name === name)?.slug ?? "news";
 }
 
+/** 搜尋引擎在 robots.txt 裡的名稱。 */
+export const SEARCH_ENGINE_AGENTS = {
+  baidu: "Baiduspider",
+  yandex: "Yandex",
+  google: "Googlebot",
+  bing: "Bingbot",
+} as const;
+export type SearchEngine = keyof typeof SEARCH_ENGINE_AGENTS;
+
+/** 這個搜尋引擎可不可以收錄本站。 */
+export function mayIndex(config: SiteConfig, engine: SearchEngine) {
+  return !config.searchEngines || config.searchEngines.includes(engine);
+}
+
 export type SiteConfig = {
   name: string;
   tagline: string;
@@ -47,10 +61,10 @@ export type SiteConfig = {
   /** 網站正式網址，例如 https://news-focus.org；用在 canonical、分享預覽、sitemap 與 RSS。 */
   url?: string;
   /**
-   * 搜尋引擎收錄："all"（預設）讓所有搜尋引擎收錄；"baidu-only" 只讓百度收錄：
-   * Google、Bing 讀得到頁面但每頁標 noindex（才會從結果移除），其他搜尋引擎由 robots.txt 擋掉。
+   * 只讓這些搜尋引擎收錄（baidu、yandex、google、bing）；不設定時所有搜尋引擎都可收錄。
+   * 不在清單裡的 Google、Bing 仍可抓取但每頁標 noindex（才會從結果移除），其他搜尋引擎由 robots.txt 擋掉。
    */
-  searchIndex: "all" | "baidu-only";
+  searchEngines?: SearchEngine[];
   /** Google Tag Manager 容器編號，例如 GTM-P5R8TSN；GA 等追蹤都在 GTM 裡設定。 */
   gtm?: string;
 };
@@ -62,7 +76,6 @@ const DEFAULTS: SiteConfig = {
   pageSize: 12,
   homePages: 0,
   timeZone: "Asia/Shanghai",
-  searchIndex: "all",
 };
 
 /** 文章、圖片與網站設定所在的資料夾；測試與預覽時可用 CONTENT_DIR 換掉。 */
@@ -82,7 +95,11 @@ export function loadSiteConfig(dir = contentDir()): SiteConfig {
       raw.url && /^https?:\/\/[^/\s]+(\/\S*)?$/.test(raw.url)
         ? raw.url.replace(/\/+$/, "")
         : undefined,
-    searchIndex: raw.searchIndex === "baidu-only" ? "baidu-only" : "all",
+    searchEngines: Array.isArray(raw.searchEngines)
+      ? raw.searchEngines.filter(
+          (name): name is SearchEngine => name in SEARCH_ENGINE_AGENTS
+        )
+      : undefined,
     gtm: raw.gtm && /^GTM-[A-Z0-9]+$/.test(raw.gtm) ? raw.gtm : undefined,
     pageSize: Math.max(
       1,
