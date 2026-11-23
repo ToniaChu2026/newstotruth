@@ -8,7 +8,7 @@
 - 頁面的下載檔案放在 `content/downloads/`，頁面開頭寫 `downloads: 甲.pdf、乙.pdf`：訪客留下電子郵件後才顯示連結。郵件由 `functions/api/subscribe.ts`（Cloudflare Pages Function）存進 D1（綁定名稱 `DB`，設定見 README）。
 - `content/media/`：圖片。檔名是文章標題的拼音加序號，例如 `santianzao42yiciwanggong-tuidangzhongxin-gongbu-1.jpg`、`-2.jpg`（匯入程式自動命名，見 `src/importer/media-name.ts`；和別篇撞名時加上日期）。
 - 只有草稿（`draft: true`）用到的圖片不會發佈到 `/media/`。
-- `content/site.json`：網站名稱、正式網址（`url`，canonical、分享預覽、sitemap、RSS 都用它）、標語、每頁篇數、時區。
+- `content/site.json`：網站名稱、正式網址（`url`，canonical、分享預覽、sitemap、RSS 都用它）、標語、每頁篇數、時區。`searchIndex: "baidu-only"`：本站只讓百度收錄，Google、Bing 每頁標 noindex，其他搜尋引擎由 robots.txt 擋掉。
 - 每一頁的分享預覽（og、twitter card）、結構化資料、`sitemap.xml` 與 RSS（`/feed.xml`，最新 30 篇）都由產生器自動輸出，不需要在文章裡寫。
 - `src/site/`：產生器（React 只用來在建置時輸出 HTML，瀏覽器端只有搜尋頁的 `search.js`）。
 - `src/importer/`：抓取網頁、擷取文字與圖片、寫成文章檔。

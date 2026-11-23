@@ -1,6 +1,7 @@
 {
   "name": "新闻聚焦",
   "url": "https://news-focus.org",
+  "searchIndex": "baidu-only",
   "tagline": "关注真相 传递希望",
   "description": "本站文章均为转载与整理，文末附原文链接。",
   "pageSize": 12,

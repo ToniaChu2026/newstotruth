@@ -246,6 +246,12 @@ export function Page({
           <meta name="description" content={meta.description} />
         ) : null}
         {meta.noindex ? <meta name="robots" content="noindex" /> : null}
+        {site.config.searchIndex === "baidu-only" ? (
+          <>
+            <meta name="googlebot" content="noindex, nofollow" />
+            <meta name="bingbot" content="noindex, nofollow" />
+          </>
+        ) : null}
         {canonical ? <link rel="canonical" href={canonical} /> : null}
         <meta property="og:title" content={meta.title} />
         {meta.description ? (

@@ -271,7 +271,9 @@ describe("產生網站", () => {
     const category = read("category/inspired/index.html");
     expect(category).toContain('aria-label="位置"');
     expect(category).toContain("近期文章");
-    expect(category).toMatch(/aria-current="page"[^>]*>感悟<span[^>]*>1<\/span>/);
+    expect(category).toMatch(
+      /aria-current="page"[^>]*>感悟<span[^>]*>1<\/span>/
+    );
     expect(category).toContain('action="/repo/search/"');
     expect(fs.existsSync(path.join(outDir, "草稿文章"))).toBe(false);
     const index = JSON.parse(read("search-index.json"));
@@ -296,11 +298,15 @@ describe("產生網站", () => {
       path.join(dir, "site.json"),
       JSON.stringify({ pageSize: 1, homePages: 1 })
     );
-    await addArticle(source, { ...structured, title: "较旧的文章" }, {
-      dir,
-      download,
-      now: new Date("2026-11-01T00:00:00Z"),
-    });
+    await addArticle(
+      source,
+      { ...structured, title: "较旧的文章" },
+      {
+        dir,
+        download,
+        now: new Date("2026-11-01T00:00:00Z"),
+      }
+    );
     await addArticle(
       { ...source, sourceUrl: "https://publisher.example.com/new" },
       { ...structured, title: "最新的文章" },
@@ -318,7 +324,11 @@ describe("產生網站", () => {
   it("沒有首圖的文章不放首頁，但仍在分類頁與文章頁", async () => {
     await addArticle(source, { ...structured }, { dir, download, now });
     await addArticle(
-      { ...source, sourceUrl: "https://publisher.example.com/plain", images: [] },
+      {
+        ...source,
+        sourceUrl: "https://publisher.example.com/plain",
+        images: [],
+      },
       { ...structured, title: "没有配图的文章" },
       { dir, download, now }
     );
@@ -380,25 +390,40 @@ describe("產生網站", () => {
     );
     await addArticle(source, structured, { dir, download, now });
     await addArticle(
-      { ...source, sourceUrl: "https://publisher.example.com/plain", images: [] },
+      {
+        ...source,
+        sourceUrl: "https://publisher.example.com/plain",
+        images: [],
+      },
       { ...structured, title: "没有配图 <的> 文章" },
       { dir, download, now: new Date("2026-11-01T00:00:00Z") }
     );
     const outDir = path.join(dir, "dist");
     const origin = "https://user.github.io/repo";
-    await buildSite({ contentDir: dir, outDir, basePath: "/repo", siteUrl: origin });
+    await buildSite({
+      contentDir: dir,
+      outDir,
+      basePath: "/repo",
+      siteUrl: origin,
+    });
     const read = (file: string) =>
       fs.readFileSync(path.join(outDir, file), "utf8");
     const ld = (html: string) => {
-      const found = /<script type="application\/ld\+json">(.*?)<\/script>/.exec(html);
+      const found = /<script type="application\/ld\+json">(.*?)<\/script>/.exec(
+        html
+      );
       return found ? JSON.parse(found[1]) : null;
     };
 
     const article = read(`${slug}/index.html`);
     expect(article).toContain('property="og:type" content="article"');
-    expect(article).toContain('name="twitter:card" content="summary_large_image"');
+    expect(article).toContain(
+      'name="twitter:card" content="summary_large_image"'
+    );
     expect(article).toContain('property="article:section" content="感悟"');
-    expect(article).toMatch(/property="article:published_time" content="2026-11-10T/);
+    expect(article).toMatch(
+      /property="article:published_time" content="2026-11-10T/
+    );
     expect(ld(article)).toMatchObject({
       "@type": "NewsArticle",
       headline: "测试文章：标题",
@@ -438,9 +463,13 @@ describe("產生網站", () => {
       `<loc>${origin}/${encodeURIComponent(slug)}/</loc><lastmod>2026-11-10</lastmod>`
     );
     const feed = read("feed.xml");
-    expect(feed).toContain(`<link>${origin}/${encodeURIComponent(slug)}/</link>`);
+    expect(feed).toContain(
+      `<link>${origin}/${encodeURIComponent(slug)}/</link>`
+    );
     expect(feed).toContain("<title>没有配图 &lt;的&gt; 文章</title>");
-    expect(feed.indexOf("测试文章：标题")).toBeLessThan(feed.indexOf("没有配图"));
+    expect(feed.indexOf("测试文章：标题")).toBeLessThan(
+      feed.indexOf("没有配图")
+    );
   }, 30_000);
 
   it("圖片帶上寬高，橫幅不放大超過原圖", async () => {
@@ -475,10 +504,14 @@ describe("產生網站", () => {
       /<img src="\/media\/site-hero\.png"[^>]*style="max-width:556px"[^>]*width="556" height="344"/
     );
     expect(home).toMatch(
-      new RegExp(`<img src="/media/${prefix}-1\\.png"[^>]*width="1200" height="800"`)
+      new RegExp(
+        `<img src="/media/${prefix}-1\\.png"[^>]*width="1200" height="800"`
+      )
     );
     const article = read(`${slug}/index.html`);
-    expect(article.match(/width="1200" height="800"/g)!.length).toBeGreaterThan(1);
+    expect(article.match(/width="1200" height="800"/g)!.length).toBeGreaterThan(
+      1
+    );
     expect(JSON.parse(read("search-index.json"))[0].size).toEqual([1200, 800]);
   }, 30_000);
 
@@ -525,7 +558,9 @@ describe("產生網站", () => {
     const page = read("about/index.html");
     expect(page).toContain("<title>关于本站 | 新闻聚焦</title>");
     expect(page).toContain('name="description" content="说明文字。"');
-    expect(page).toMatch(/<a href="https:\/\/v\.example\/1"[^>]*>《视频》<\/a>/);
+    expect(page).toMatch(
+      /<a href="https:\/\/v\.example\/1"[^>]*>《视频》<\/a>/
+    );
     const home = read("index.html");
     expect(home).toMatch(/<a href="\/repo\/about\/"[^>]*><img/);
     expect(home).not.toContain("关于本站");
@@ -552,6 +587,40 @@ describe("產生網站", () => {
       "網址相同"
     );
   }, 30_000);
+  it("只讓百度收錄：Google、Bing 每頁標 noindex，robots.txt 擋其他搜尋引擎", async () => {
+    fs.writeFileSync(
+      path.join(dir, "site.json"),
+      JSON.stringify({ url: "https://news.example", searchIndex: "baidu-only" })
+    );
+    const outDir = path.join(dir, "dist");
+    await buildSite({ contentDir: dir, outDir });
+    const read = (file: string) =>
+      fs.readFileSync(path.join(outDir, file), "utf8");
+    const home = read("index.html");
+    expect(home).toContain(
+      '<meta name="googlebot" content="noindex, nofollow"/>'
+    );
+    expect(home).toContain(
+      '<meta name="bingbot" content="noindex, nofollow"/>'
+    );
+    expect(home).not.toContain('name="robots"');
+    const robots = read("robots.txt");
+    expect(robots).toMatch(/User-agent: Baiduspider\nAllow: \//);
+    expect(robots).toMatch(/User-agent: \*\nDisallow: \//);
+    expect(read("_headers")).toContain("X-Robots-Tag: googlebot: noindex");
+
+    fs.writeFileSync(
+      path.join(dir, "site.json"),
+      JSON.stringify({ url: "https://news.example" })
+    );
+    await buildSite({ contentDir: dir, outDir });
+    expect(read("index.html")).not.toContain('name="googlebot"');
+    expect(read("robots.txt")).toBe(
+      "User-agent: *\nAllow: /\nSitemap: https://news.example/sitemap.xml\n"
+    );
+    expect(fs.existsSync(path.join(outDir, "_headers"))).toBe(false);
+  });
+
   it("頁面的下載檔案：留下電子郵件才顯示連結，檔案發佈到 /downloads/", async () => {
     fs.mkdirSync(path.join(dir, "pages"));
     fs.mkdirSync(path.join(dir, "downloads"));
@@ -565,16 +634,22 @@ describe("產生網站", () => {
     await buildSite({ contentDir: dir, outDir, basePath: "/repo" });
     const page = fs.readFileSync(path.join(outDir, "get/index.html"), "utf8");
     expect(page).toContain('action="/repo/api/subscribe"');
-    expect(page).toMatch(/<div id="download-links" hidden="">[\s\S]*href="\/repo\/downloads\/%E7%94%B2%E6%96%87\.pdf"/);
+    expect(page).toMatch(
+      /<div id="download-links" hidden="">[\s\S]*href="\/repo\/downloads\/%E7%94%B2%E6%96%87\.pdf"/
+    );
     expect(page).toMatch(/src="\/repo\/assets\/download\.[0-9a-f]+\.js"/);
     expect(fs.existsSync(path.join(outDir, "downloads/甲文.pdf"))).toBe(true);
     expect(fs.existsSync(path.join(outDir, "downloads/未用.pdf"))).toBe(false);
-    expect(fs.readFileSync(path.join(outDir, "index.html"), "utf8")).not.toContain("download.");
+    expect(
+      fs.readFileSync(path.join(outDir, "index.html"), "utf8")
+    ).not.toContain("download.");
     fs.writeFileSync(
       path.join(dir, "pages/get.md"),
       "---\ntitle: 下载\ndate: 2026-01-01T00:00:00.000Z\ndownloads: 缺少.pdf\n---\n\n说明。\n"
     );
-    await expect(buildSite({ contentDir: dir, outDir })).rejects.toThrow("缺少.pdf");
+    await expect(buildSite({ contentDir: dir, outDir })).rejects.toThrow(
+      "缺少.pdf"
+    );
   });
 });
 

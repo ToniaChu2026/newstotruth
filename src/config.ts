@@ -46,6 +46,11 @@ export type SiteConfig = {
   hero?: { image: string; alt?: string; link?: string };
   /** 網站正式網址，例如 https://news-focus.org；用在 canonical、分享預覽、sitemap 與 RSS。 */
   url?: string;
+  /**
+   * 搜尋引擎收錄："all"（預設）讓所有搜尋引擎收錄；"baidu-only" 只讓百度收錄：
+   * Google、Bing 讀得到頁面但每頁標 noindex（才會從結果移除），其他搜尋引擎由 robots.txt 擋掉。
+   */
+  searchIndex: "all" | "baidu-only";
   /** Google Tag Manager 容器編號，例如 GTM-P5R8TSN；GA 等追蹤都在 GTM 裡設定。 */
   gtm?: string;
 };
@@ -57,6 +62,7 @@ const DEFAULTS: SiteConfig = {
   pageSize: 12,
   homePages: 0,
   timeZone: "Asia/Shanghai",
+  searchIndex: "all",
 };
 
 /** 文章、圖片與網站設定所在的資料夾；測試與預覽時可用 CONTENT_DIR 換掉。 */
@@ -76,8 +82,8 @@ export function loadSiteConfig(dir = contentDir()): SiteConfig {
       raw.url && /^https?:\/\/[^/\s]+(\/\S*)?$/.test(raw.url)
         ? raw.url.replace(/\/+$/, "")
         : undefined,
-    gtm:
-      raw.gtm && /^GTM-[A-Z0-9]+$/.test(raw.gtm) ? raw.gtm : undefined,
+    searchIndex: raw.searchIndex === "baidu-only" ? "baidu-only" : "all",
+    gtm: raw.gtm && /^GTM-[A-Z0-9]+$/.test(raw.gtm) ? raw.gtm : undefined,
     pageSize: Math.max(
       1,
       Math.min(Number(raw.pageSize) || DEFAULTS.pageSize, 60)

@@ -397,11 +397,21 @@ export async function buildSite(options: BuildOptions = {}) {
           .join("") +
         `</channel>\n</rss>\n`
     );
+    // 只讓百度收錄時：百度照常抓取；Google、Bing 允許抓取但每頁標 noindex
+    //（被 robots.txt 擋住的網址仍可能只憑外部連結出現在結果裡），其他搜尋引擎一律擋掉。
     fs.writeFileSync(
       path.join(outDir, "robots.txt"),
-      `User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n`
+      config.searchIndex === "baidu-only"
+        ? `User-agent: Baiduspider\nAllow: /\n\nUser-agent: Googlebot\nAllow: /\n\nUser-agent: Bingbot\nAllow: /\n\nUser-agent: *\nDisallow: /\n\nSitemap: ${origin}/sitemap.xml\n`
+        : `User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n`
     );
   }
+  // PDF、RSS 等不是網頁的檔案沒有 meta 標籤，由 Cloudflare Pages 依 _headers 送出 X-Robots-Tag。
+  if (config.searchIndex === "baidu-only")
+    fs.writeFileSync(
+      path.join(outDir, "_headers"),
+      "/*\n  X-Robots-Tag: googlebot: noindex, nofollow\n"
+    );
   return { outDir, posts: posts.length, pages: written.length + 2 };
 }
 
