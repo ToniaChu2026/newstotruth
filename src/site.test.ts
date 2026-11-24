@@ -113,6 +113,18 @@ describe("擷取正文範圍", () => {
     );
   });
 
+  it("直接給正文時也拿掉和圖說相同的段落", () => {
+    const { content } = resolveContent(
+      {
+        content:
+          "{{image:1}}\n\n图说：第一张图\n\n第一段。\n\n图说：第一张图的延伸",
+        captions: { "1": "图说：第一张图" },
+      },
+      source.text
+    );
+    expect(content).toBe("{{image:1}}\n\n第一段。\n\n图说：第一张图的延伸");
+  });
+
   it("找不到起點時報錯", () => {
     expect(() =>
       resolveContent({ contentRange: { start: "不存在" } }, source.text)

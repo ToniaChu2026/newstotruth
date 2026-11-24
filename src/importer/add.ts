@@ -96,7 +96,9 @@ export function mediaPrefix(title: string, date: Date, dir: string) {
     /-/g,
     ""
   );
-  const files = fs.existsSync(mediaDir(dir)) ? fs.readdirSync(mediaDir(dir)) : [];
+  const files = fs.existsSync(mediaDir(dir))
+    ? fs.readdirSync(mediaDir(dir))
+    : [];
   return uniqueMediaPrefix(title, day, prefix => {
     // 前綴只有小寫字母、數字與 -，不需要跳脫。
     const pattern = new RegExp(`^${prefix}-\\d+\\.[a-z0-9]+$`, "i");
@@ -105,9 +107,17 @@ export function mediaPrefix(title: string, date: Date, dir: string) {
 }
 
 export function resolveContent(input: StructuredInput, sourceText: string) {
-  if (input.content?.trim() || !input.contentRange) return input;
-  const { start, end, omit = [] } = input.contentRange;
   const captionTexts = new Set(captionMap(input.captions).values());
+  if (input.content?.trim()) {
+    // 和圖說完全相同的段落是網頁上的圖說文字，已經放進圖說，不再當正文。
+    const content = input.content
+      .split(/\n{2,}/)
+      .filter(paragraph => !captionTexts.has(paragraph.trim()))
+      .join("\n\n");
+    return { ...input, content };
+  }
+  if (!input.contentRange) return input;
+  const { start, end, omit = [] } = input.contentRange;
   const from = sourceText.indexOf(start);
   if (!start || from === -1)
     throw new Error("contentRange.start 在來源文字裡找不到。");
