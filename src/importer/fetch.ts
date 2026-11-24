@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { lookup } from "node:dns/promises";
 import { DEFAULT_CATEGORY_NAME, isCategoryName } from "../config";
+import { imageSizeOf } from "../site/image-size";
 import {
   aiArticleSchema,
   structureWithClaude,
@@ -503,7 +504,15 @@ export async function downloadImage(candidate: ExtractedImage) {
     const bytes = Buffer.from(await response.arrayBuffer());
     if (!bytes.length || bytes.length > MAX_IMAGE_BYTES)
       throw new Error("圖片超過大小上限。");
-    if (bytes.length < MIN_IMAGE_BYTES) throw new Error("圖片太小，略過。");
+    // 小檔案多半是圖示或間隔圖；但壓縮得好的 webp 照片也可能只有幾 KB，
+    // 所以讀得出寬高時改看尺寸（至少 200×150 像素）。
+    const size = imageSizeOf(bytes);
+    if (
+      size
+        ? size.width < 200 || size.height < 150
+        : bytes.length < MIN_IMAGE_BYTES
+    )
+      throw new Error("圖片太小，略過。");
     if (PLACEHOLDER_IMAGES.has(createHash("md5").update(bytes).digest("hex")))
       throw new Error("來源回傳的是佔位圖，不是文章的圖片。");
     return {
